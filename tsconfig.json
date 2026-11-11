@@ -10,5 +10,12 @@
     "noEmitOnError": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/mass.ts"]
+  "files": [
+    "src/hymns.ts",
+    "src/home.ts",
+    "src/mass.ts",
+    "src/songs.ts",
+    "src/rosary.ts",
+    "src/parse-kakao-hymn.d.ts"
+  ]
 }

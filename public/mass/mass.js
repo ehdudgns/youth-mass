@@ -3,6 +3,8 @@
  * 순서와 짧은 응답은 한국천주교주교회의 『미사 통상문』(로마 미사 경본)에 따른다.
  * 긴 고유 기도문·독서·신경·대영광송 전문 등은 싣지 않는다.
  */
+import { esc, seoulToday, comingSunday, longDate, currentMass, sundayChipText, massSongChipText, mountSiteChrome, } from "./hymns.js";
+export { seoulToday, comingSunday, longDate, currentMass };
 /** 통상문에 고정된 미사곡 기본 번호. /api/data의 fixed가 있으면 그 값을 우선한다. */
 export const DEFAULT_FIXED = {
     "자비송": "380",
@@ -14,11 +16,58 @@ export const DEFAULT_FIXED = {
     "주님께 나라와…": "444",
     "하느님의 어린양": "383",
 };
+/** 묵주기도(미사 전 기도)와 같은 성모송 교송 */
+const HAIL_MARY = {
+    lead: "은총이 가득하신 마리아님, 기뻐하소서!\n주님께서 함께 계시니 여인 중에 복되시며\n태중의 아들 예수님 또한 복되시나이다.",
+    response: "천주의 성모 마리아님,\n이제와 저희 죽을 때에\n저희 죄인을 위하여 빌어주소서. 아멘.",
+};
 export const MASS_SECTIONS = [
     {
         id: "intro",
         title: "시작 예식",
         steps: [
+            {
+                id: "pre-mass-announce",
+                title: "안내",
+                roles: ["해설자"],
+                response: "찬미예수님!\n거룩한 미사에 방해가 되지않도록 휴대폰은 무음으로하시고 \n알람은 꺼주시기 바랍니다.\n삼종기도를 바치겠습니다.",
+            },
+            {
+                id: "angelus",
+                title: "삼종기도",
+                roles: ["해설자", "신자"],
+                note: "입당 성가에 앞서 바칩니다. ○ 해설자 · ● 신자.",
+                liturgy: [
+                    {
+                        kind: "verse",
+                        lead: "주님의 천사가 마리아께 아뢰니",
+                        response: "성령으로 잉태하셨나이다.",
+                    },
+                    { kind: "hail" },
+                    {
+                        kind: "verse",
+                        lead: "“주님의 종이오니",
+                        response: "그대로 제게 이루어지소서!”",
+                    },
+                    { kind: "hail" },
+                    {
+                        kind: "verse",
+                        lead: "이에 말씀이 사람이 되시어",
+                        response: "저희 가운데 계시나이다.",
+                    },
+                    { kind: "hail" },
+                    {
+                        kind: "verse",
+                        lead: "천주의 성모님, 저희를 위하여 빌어주시어",
+                        response: "그리스도께서 약속하신 영원한 생명을 얻게 하소서.",
+                    },
+                    {
+                        kind: "collect",
+                        lead: "기도합시다.\n하느님, 천사의 아룀으로\n성자께서 사람이 되심을 알았으니\n성자의 수난과 십자가로\n부활의 영광에 이르는 은총을\n저희에게 내려 주소서.\n우리 주 그리스도를 통하여 비나이다.",
+                        response: "아멘.",
+                    },
+                ],
+            },
             {
                 id: "entrance",
                 title: "입당 성가",
@@ -245,47 +294,6 @@ export const MASS_SECTIONS = [
         ],
     },
 ];
-const DOW = ["일", "월", "화", "수", "목", "금", "토"];
-function esc(s) {
-    return s.replace(/[&<>"']/g, (c) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-    }[c]));
-}
-export function seoulToday() {
-    return new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Seoul",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).format(new Date());
-}
-function parseYMD(s) {
-    const [y, m, d] = s.split("-").map(Number);
-    return new Date(Date.UTC(y, m - 1, d));
-}
-function fmtYMD(dt) {
-    return dt.toISOString().slice(0, 10);
-}
-export function comingSunday(today = seoulToday()) {
-    const t = parseYMD(today);
-    const add = (7 - t.getUTCDay()) % 7;
-    t.setUTCDate(t.getUTCDate() + add);
-    return fmtYMD(t);
-}
-export function longDate(s) {
-    const d = parseYMD(s);
-    return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${DOW[d.getUTCDay()]})`;
-}
-export function currentMass(masses, today = seoulToday()) {
-    if (!masses.length)
-        return null;
-    const asc = [...masses].sort((a, b) => a.date.localeCompare(b.date));
-    return asc.find((m) => m.date >= today) || asc[asc.length - 1] || null;
-}
 export function normHymnName(s) {
     return s.replace(/[\s.…·⋯]/g, "").toLowerCase();
 }
@@ -314,32 +322,75 @@ function hymnsHTML(bindings, mass, fixed) {
         else if (b.kind === "fixed" && b.fixedName)
             nums = resolveFixedNumber(b.fixedName, fixed) || "–";
         const empty = nums === "–" ? " empty" : "";
+        // 주간 성가(입당·봉헌·성체·파견): "입당 성가 (123) 입니다." 안내 문구
+        if (b.kind === "week") {
+            const name = /성가$/.test(b.label) ? b.label : `${b.label} 성가`;
+            const cls = empty ? " hymn-announce empty" : " hymn-announce";
+            return `<div class="hymn${cls}"><span class="hymn-sentence">${esc(name)} (${esc(nums)})번 입니다.</span></div>`;
+        }
         return `<div class="hymn"><span class="hymn-label">${esc(b.label)}</span><span class="hymn-num${empty}">${esc(nums)}</span></div>`;
     }).join("")}</div>`;
+}
+function roleBlock(role, label, text) {
+    return `<div class="role-block" data-role="${role}"><div class="role-label">${esc(label)}</div><div class="role-text">${esc(text)}</div></div>`;
+}
+function liturgyHTML(parts) {
+    if (!parts?.length)
+        return "";
+    const blocks = parts.map((p) => {
+        if (p.kind === "hail") {
+            return `<div class="liturgy-unit">
+        <div class="liturgy-tag">성모송</div>
+        ${roleBlock("commentator", "해설자", HAIL_MARY.lead)}
+        ${roleBlock("faithful", "신자", HAIL_MARY.response)}
+      </div>`;
+        }
+        if (p.kind === "collect") {
+            return `<div class="liturgy-unit">
+        <div class="liturgy-tag">마침 기도</div>
+        ${roleBlock("commentator", "해설자", p.lead)}
+        ${roleBlock("faithful", "신자", p.response)}
+      </div>`;
+        }
+        return `<div class="liturgy-unit">
+      ${roleBlock("commentator", "해설자", p.lead)}
+      ${roleBlock("faithful", "신자", p.response)}
+    </div>`;
+    });
+    return `<div class="liturgy">${blocks.join("")}</div>`;
 }
 function stepHTML(step, mass, fixed) {
     const resp = step.response
         ? `<div class="resp">${esc(step.response).replace(/\n/g, "<br>")}</div>`
         : "";
     const note = step.note ? `<p class="note">${esc(step.note)}</p>` : "";
+    const body = `
+    ${hymnsHTML(step.hymns, mass, fixed)}
+    ${liturgyHTML(step.liturgy)}
+    ${resp}
+    ${note}`;
+    // 긴 기도문(삼종기도 등)은 접었다 펼 수 있게
+    if (step.liturgy?.length) {
+        return `<details class="step step-fold" id="step-${esc(step.id)}">
+      <summary class="step-head">
+        <h3>${esc(step.title)}</h3>
+        <div class="roles">${rolesHTML(step.roles)}</div>
+      </summary>
+      <div class="step-fold-body">${body}</div>
+    </details>`;
+    }
     return `<article class="step" id="step-${esc(step.id)}">
     <div class="step-head">
       <h3>${esc(step.title)}</h3>
       <div class="roles">${rolesHTML(step.roles)}</div>
     </div>
-    ${hymnsHTML(step.hymns, mass, fixed)}
-    ${resp}
-    ${note}
+    ${body}
   </article>`;
 }
 export function renderOrder(opts) {
     const { mass, fixed, today, sunday, loadError } = opts;
-    const dateLine = today === sunday
-        ? `오늘 · ${longDate(today)} 주일`
-        : `다가오는 주일 ${longDate(sunday)}`;
-    const songLine = mass
-        ? (mass.date === today ? `오늘 미사 성가 · ${longDate(mass.date)}` : mass.date > today ? `이번 미사 성가 · ${longDate(mass.date)}` : `최근 미사 성가 · ${longDate(mass.date)}`)
-        : (loadError ? "성가 번호를 불러오지 못했어요" : "아직 등록된 성가가 없어요");
+    const dateLine = sundayChipText(today, sunday);
+    const songLine = massSongChipText(mass, today, !!loadError);
     const sections = MASS_SECTIONS.map((sec) => {
         const body = sec.steps.map((st) => stepHTML(st, mass, fixed)).join("");
         return `<details class="section" open>
@@ -370,14 +421,25 @@ async function loadData() {
     }
 }
 export async function mount(root) {
+    root.innerHTML = `
+<div class="wrap">
+  <div data-site-nav></div>
+  <main id="mass-root"><div class="loading">불러오는 중…</div></main>
+  <footer>
+    <div data-site-footer></div>
+  </footer>
+</div>`;
+    mountSiteChrome("mass");
     const today = seoulToday();
     const sunday = comingSunday(today);
-    root.innerHTML = `<div class="loading">불러오는 중…</div>`;
+    const main = document.getElementById("mass-root");
+    if (!main)
+        return;
     const { data, error } = await loadData();
     const masses = data?.masses ?? [];
     const fixed = data?.fixed ?? [];
     const mass = currentMass(masses, today);
-    root.innerHTML = renderOrder({ mass, fixed, today, sunday, loadError: !!error });
+    main.innerHTML = renderOrder({ mass, fixed, today, sunday, loadError: !!error });
 }
 function boot() {
     const root = document.getElementById("app");

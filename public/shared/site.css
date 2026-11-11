@@ -1,0 +1,14 @@
+/* 공통 페이지 네비 */
+.site-nav{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;
+  margin:0 0 8px;padding:0;
+}
+.site-nav a{
+  color:var(--navy, #2f3a56);text-decoration:none;font-weight:700;font-size:14px;
+  background:var(--card, #fffdf9);border:1px solid var(--line, #e7dfd1);
+  border-radius:999px;padding:7px 12px;
+}
+.site-nav-footer{
+  justify-content:center;margin:0 0 10px;
+}
+.site-nav-footer a{padding:9px 16px}

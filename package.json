@@ -7,11 +7,14 @@
     "@netlify/blobs": "^11.1.8"
   },
   "scripts": {
-    "build": "tsc && cp src/parse-kakao-hymn.mjs public/songs/parse-kakao-hymn.js",
-    "build:mass": "tsc",
+    "dev": "netlify dev",
+    "build": "tsc -p tsconfig.json && npm run sync:assets",
+    "build:mass": "npm run build",
+    "sync:assets": "cp public/mass/hymns.js public/shared/hymns.js && cp public/mass/hymns.js public/hymns.js && cp public/mass/hymns.js public/songs/hymns.js && cp public/mass/hymns.js public/rosary/hymns.js && cp public/mass/home.js public/home.js && cp public/mass/songs.js public/songs/songs.js && cp public/mass/rosary.js public/rosary/rosary.js && cp src/parse-kakao-hymn.mjs public/songs/parse-kakao-hymn.js",
     "test": "node --test src/parse-kakao-hymn.test.mjs"
   },
   "devDependencies": {
+    "netlify-cli": "^23.15.1",
     "typescript": "^7.0.2"
   }
 }
