@@ -7,8 +7,9 @@
     "@netlify/blobs": "^11.1.8"
   },
   "scripts": {
-    "build": "tsc",
-    "build:mass": "tsc"
+    "build": "tsc && cp src/parse-kakao-hymn.mjs public/songs/parse-kakao-hymn.js",
+    "build:mass": "tsc",
+    "test": "node --test src/parse-kakao-hymn.test.mjs"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

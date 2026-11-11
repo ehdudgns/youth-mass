@@ -112,6 +112,22 @@
     .fab-edit{display:none}
   }
   body.is-admin .fab-edit{display:none}
+
+  .kakao-import{background:var(--gold-soft);border-radius:14px;padding:14px 14px 12px;margin-bottom:16px}
+  .kakao-import h3{margin:0 0 6px;font-size:16px}
+  .kakao-import textarea{min-height:128px;font-size:16px;line-height:1.45}
+  #importKakao{width:100%;margin-top:8px;padding:14px 16px;font-size:16px;min-height:48px;background:var(--navy);border-color:var(--navy);color:#fff}
+  #kakaoImportResult{margin-top:10px;font-size:14px;line-height:1.55;color:var(--ink);min-height:1.5em}
+  #kakaoImportResult.ok{color:var(--ok)}
+  #kakaoImportResult.err{color:var(--danger)}
+  .field.import-ok input,.field.import-ok textarea,.field.import-ok .multi{
+    border-color:var(--ok);box-shadow:0 0 0 2px rgba(62,107,79,.18)
+  }
+  .field.import-miss input,.field.import-miss textarea,.field.import-miss .multi{
+    border-color:#e0b35c;box-shadow:0 0 0 2px rgba(176,141,74,.28)
+  }
+  .field.import-ok > label::after{content:" ✓";color:var(--ok);font-weight:700}
+  .field.import-miss > label::after{content:" · 확인";color:#8a6d2b;font-weight:700;font-size:12px}
 </style>
 </head>
 <body>
@@ -142,6 +158,16 @@
       <h3 id="formTitle">미사 성가 등록</h3>
       <form id="massForm" autocomplete="off">
         <input type="hidden" id="fId">
+        <div class="kakao-import" id="kakaoImport">
+          <h3>카톡에서 가져오기</h3>
+          <p class="hint">카톡 성가 안내나, 복사한 성가 문구를 붙여넣고 가져오기를 누르세요. 바로 저장되지는 않아요.</p>
+          <div class="field" style="margin-bottom:0">
+            <label for="fKakao">카톡 메시지 붙여넣기</label>
+            <textarea id="fKakao" placeholder="예:&#10;11월 15일&#10;입당 123&#10;봉헌 45&#10;성체 67, 89&#10;파견 400" autocomplete="off" autocapitalize="off"></textarea>
+          </div>
+          <button type="button" id="importKakao">가져오기</button>
+          <div id="kakaoImportResult" role="status"></div>
+        </div>
         <div class="field"><label for="fDate">미사 날짜</label><input type="date" id="fDate" required></div>
         <div class="grid2">
           <div class="field"><label for="fEnt">입당</label><input id="fEnt" inputmode="numeric" placeholder="355"></div>
@@ -188,7 +214,8 @@
 <button type="button" class="fab-edit public-only" id="adminFab" aria-label="성가 입력하기">✏️ 성가 입력</button>
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
+import { parseKakaoHymn, describeParse } from "./parse-kakao-hymn.js";
 (() => {
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -331,13 +358,55 @@
   $("#addCom").onclick = () => addComInput();
   const splitNums = (s) => String(s || "").split(/[,，\/\s]+/).map((x) => x.trim()).filter(Boolean);
 
+  function importFieldEl(key) {
+    const sel = { date: "#fDate", entrance: "#fEnt", offertory: "#fOff", communion: "#fCom", recessional: "#fRec", memo: "#fMemo" }[key];
+    return sel ? $(sel)?.closest(".field") : null;
+  }
+  function clearImportMarks() {
+    document.querySelectorAll(".field.import-ok, .field.import-miss").forEach((el) => el.classList.remove("import-ok", "import-miss"));
+    const r = $("#kakaoImportResult");
+    if (r) { r.textContent = ""; r.className = ""; }
+  }
+  function applyKakaoImport() {
+    clearImportMarks();
+    const text = $("#fKakao").value;
+    const resultEl = $("#kakaoImportResult");
+    if (!String(text || "").trim()) {
+      resultEl.textContent = "카톡 메시지를 붙여넣은 뒤 가져오기를 눌러 주세요.";
+      resultEl.className = "err";
+      return;
+    }
+    const result = parseKakaoHymn(text, { year: Number(seoulToday().slice(0, 4)), fixed: state.fixed });
+    const useful = result.found.filter((k) => k !== "fixed");
+    if (!useful.length) {
+      resultEl.textContent = "성가 번호나 날짜를 찾지 못했어요. 메시지를 확인하고 다시 붙여넣어 주세요.";
+      resultEl.className = "err";
+      ["date", "entrance", "offertory", "communion", "recessional"].forEach((k) => importFieldEl(k)?.classList.add("import-miss"));
+      return;
+    }
+    if (result.date) $("#fDate").value = result.date;
+    if (result.entrance.length) $("#fEnt").value = result.entrance.join(", ");
+    if (result.offertory.length) $("#fOff").value = result.offertory.join(", ");
+    if (result.recessional.length) $("#fRec").value = result.recessional.join(", ");
+    if (result.communion.length) comInputs(result.communion);
+    if (result.memo) $("#fMemo").value = result.memo;
+    useful.forEach((k) => importFieldEl(k)?.classList.add("import-ok"));
+    result.missing.forEach((k) => importFieldEl(k)?.classList.add("import-miss"));
+    resultEl.textContent = describeParse(result);
+    resultEl.className = "ok";
+    toast("가져왔어요. 확인하고 저장하세요");
+  }
+  $("#importKakao").onclick = applyKakaoImport;
+
   function resetForm() {
     $("#fId").value = ""; $("#fDate").value = comingSunday();
     $("#fEnt").value = $("#fOff").value = $("#fRec").value = $("#fMemo").value = "";
     comInputs([]); $("#formTitle").textContent = "미사 성가 등록"; $("#saveBtn").textContent = "저장하기";
     $("#cancelEdit").style.display = "none"; $("#formErr").textContent = "";
+    clearImportMarks();
   }
   function fillForm(m) {
+    clearImportMarks();
     $("#fId").value = m.id || ""; $("#fDate").value = m.date || comingSunday();
     $("#fEnt").value = (m.entrance || []).join(", "); $("#fOff").value = (m.offertory || []).join(", ");
     $("#fRec").value = (m.recessional || []).join(", "); $("#fMemo").value = m.memo || "";
