@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>청년미사 성가</title>
+<meta name="description" content="청년미사 이번 주 성가 번호와 청년 미사곡 안내">
+<meta property="og:title" content="청년미사 성가 🎶">
+<meta property="og:description" content="이번 미사 성가 번호와 청년 미사곡을 한눈에">
+<meta name="theme-color" content="#2f3a56">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎶</text></svg>">
+<style>
+  :root{
+    --bg:#f7f3ec; --card:#fffdf9; --ink:#2b2a33; --muted:#7b7469; --line:#e7dfd1;
+    --navy:#2f3a56; --gold:#b08d4a; --gold-soft:#f3ead7; --danger:#a0413b; --ok:#3e6b4f;
+    --r:18px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;
+    line-height:1.5; padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  .wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+  header{text-align:center;padding:14px 0 18px}
+  header .cross{color:var(--gold);font-size:22px;letter-spacing:4px}
+  header h1{margin:4px 0 2px;font-size:24px;color:var(--navy);font-weight:800;letter-spacing:-.5px}
+  header p{margin:0;color:var(--muted);font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 18px;margin-bottom:16px;box-shadow:0 2px 10px rgba(47,58,86,.05)}
+  .label{font-size:13px;color:var(--gold);font-weight:700;letter-spacing:1px}
+  .hero h2{margin:2px 0 4px;font-size:26px;color:var(--navy);letter-spacing:-.5px}
+  .memo{background:var(--gold-soft);border-radius:12px;padding:10px 12px;margin:10px 0 4px;font-size:15px;white-space:pre-wrap}
+  .songs{margin-top:12px}
+  .song{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px dashed var(--line)}
+  .song:last-child{border-bottom:0}
+  .song .k{font-size:18px;font-weight:700;color:var(--muted);min-width:64px}
+  .song .v{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .num{font-size:34px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:-.5px;line-height:1.1}
+  .num + .num::before{content:"·";color:var(--gold);margin-right:8px;font-weight:400}
+  .empty{color:#bbb;font-size:22px}
+  .btns{display:flex;gap:8px;margin-top:16px}
+  button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:12px 14px;font-weight:700;font-size:15px}
+  button.primary{background:#fee500;border-color:#f0d800;color:#3b1e1e;flex:1}
+  button.navy{background:var(--navy);border-color:var(--navy);color:#fff}
+  button.ghost{background:transparent}
+  button.danger{color:var(--danger);border-color:#e6c9c6;background:#fff}
+  button.sm{padding:8px 10px;font-size:14px;border-radius:10px}
+  .btns .share{flex:0 0 auto}
+  .opt{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--muted)}
+  .opt input{width:18px;height:18px;accent-color:var(--navy)}
+  h3{margin:0 0 10px;font-size:17px;color:var(--navy)}
+  .fixed{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fx{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  .fx .n{font-size:14px;color:var(--muted)}
+  .fx .no{font-size:22px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+  details{border-bottom:1px solid var(--line)}
+  details:last-child{border-bottom:0}
+  summary{list-style:none;cursor:pointer;padding:13px 2px;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+  summary::-webkit-details-marker{display:none}
+  summary .pre{color:var(--muted);font-weight:500;font-size:14px;margin-left:8px}
+  summary::after{content:"▾";color:var(--gold);transition:transform .2s}
+  details[open] summary::after{transform:rotate(180deg)}
+  .hist-body{padding:0 2px 12px}
+  .hist-body .song{padding:8px 2px}
+  .hist-body .num{font-size:22px}
+  .hist-body .song .k{font-size:15px}
+  footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+  .rosary-link{display:inline-block;color:var(--navy);text-decoration:none;font-weight:700;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:9px 16px;margin-bottom:10px}
+  footer button{font-weight:600;font-size:13px;color:var(--muted);padding:8px 12px}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 18px;border-radius:999px;font-size:15px;opacity:0;transition:.25s;pointer-events:none;z-index:50;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  /* admin */
+  .admin{display:none}
+  body.is-admin .admin{display:block}
+  body.is-admin .public-only{display:none}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:14px;font-weight:700;color:var(--muted);margin-bottom:4px}
+  input[type=text],input[type=date],input[type=password],input[inputmode],textarea{width:100%;font:inherit;font-size:17px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+  textarea{min-height:70px;resize:vertical}
+  input:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:0;border-color:var(--gold)}
+  .row{display:flex;gap:8px;align-items:center}
+  .row > input{flex:1}
+  .multi{display:flex;flex-direction:column;gap:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .admin-list .item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:8px}
+  .admin-list .item:last-child{border-bottom:0}
+  .undo-card{padding:14px 16px}
+  #undoBtn{white-space:nowrap;flex:0 0 auto}
+  .undo-card .meta{font-size:13px;color:var(--muted)}
+  .admin-list .meta{font-size:13px;color:var(--muted)}
+  .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .badge{display:inline-block;background:var(--navy);color:#fff;border-radius:999px;font-size:12px;padding:3px 10px;font-weight:700}
+  .modal{position:fixed;inset:0;background:rgba(30,30,40,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}
+  .modal.open{display:flex}
+  .modal .card{width:100%;max-width:380px}
+  .err{color:var(--danger);font-size:14px;min-height:20px;margin-top:6px}
+  .hint{font-size:13px;color:var(--muted);margin:4px 0 8px}
+  .fx-edit .row{margin-bottom:6px}
+  .fx-edit .row input:first-child{flex:1.4}
+  .edit-cta{display:block;width:100%;margin:0 0 16px;padding:15px 16px;font-size:17px;font-weight:800;
+    border-radius:14px;border:none;background:var(--gold);color:#fff;box-shadow:0 4px 14px rgba(176,141,74,.35);
+    letter-spacing:-.2px}
+  .edit-cta:active{transform:scale(.98)}
+  .edit-cta:hover{filter:brightness(1.05)}
+  .fab-edit{position:fixed;left:max(16px, env(safe-area-inset-left));
+    bottom:max(24px, calc(16px + env(safe-area-inset-bottom)));
+    z-index:30;display:flex;align-items:center;gap:8px;padding:14px 18px;
+    border:none;border-radius:999px;background:var(--gold);color:#fff;font:inherit;font-size:15px;font-weight:800;
+    box-shadow:0 6px 20px rgba(176,141,74,.45);cursor:pointer}
+  .fab-edit:active{transform:scale(.96)}
+  @media (min-width:640px){
+    .fab-edit{display:none}
+  }
+  body.is-admin .fab-edit{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="cross">✝</div>
+    <h1>청년미사 성가</h1>
+    <p>이번 미사에 부를 성가 번호예요</p>
+  </header>
+
+  <div class="public-only">
+    <button type="button" class="edit-cta" id="adminBtnTop">✏️ 성가 입력하기</button>
+  </div>
+
+  <main id="app"><div class="loading">불러오는 중…</div></main>
+
+  <!-- ADMIN -->
+  <section class="admin" id="admin">
+    <div class="bar"><span class="badge">✏️ 성가 입력</span><button class="sm ghost" id="logout">입력 닫기</button></div>
+    <div class="card undo-card">
+      <div class="row" style="justify-content:space-between">
+        <div><b>실수했나요?</b><div class="meta" id="undoInfo">최근 변경 확인 중…</div></div>
+        <button class="sm" type="button" id="undoBtn">↶ 되돌리기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 id="formTitle">미사 성가 등록</h3>
+      <form id="massForm" autocomplete="off">
+        <input type="hidden" id="fId">
+        <div class="field"><label for="fDate">미사 날짜</label><input type="date" id="fDate" required></div>
+        <div class="grid2">
+          <div class="field"><label for="fEnt">입당</label><input id="fEnt" inputmode="numeric" placeholder="355"></div>
+          <div class="field"><label for="fOff">봉헌</label><input id="fOff" inputmode="numeric" placeholder="260"></div>
+        </div>
+        <div class="field"><label>성체 (여러 곡 가능)</label>
+          <div class="multi" id="fCom"></div>
+          <button class="sm" type="button" id="addCom" style="margin-top:6px">+ 성체 성가 추가</button>
+        </div>
+        <div class="field"><label for="fRec">파견</label><input id="fRec" inputmode="numeric" placeholder="180"></div>
+        <div class="field"><label for="fMemo">메모 (선택)</label><textarea id="fMemo" placeholder="예: 오늘은 성가대 연습 7시"></textarea></div>
+        <div class="err" id="formErr"></div>
+        <div class="row">
+          <button class="navy" type="submit" style="flex:1" id="saveBtn">저장하기</button>
+          <button type="button" class="ghost" id="cancelEdit" style="display:none">취소</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>등록된 미사</h3>
+      <div class="admin-list" id="adminList"></div>
+    </div>
+
+    <div class="card">
+      <h3>청년 미사곡 (고정)</h3>
+      <p class="hint">매 미사 똑같이 보이는 목록이에요. 이름과 번호를 고칠 수 있어요.</p>
+      <div class="fx-edit" id="fxEdit"></div>
+      <button class="sm" type="button" id="addFx">+ 항목 추가</button>
+      <div class="err" id="fxErr"></div>
+      <button class="navy" type="button" id="saveFx" style="width:100%">미사곡 저장</button>
+    </div>
+  </section>
+
+  <footer>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px">
+      <a class="rosary-link" href="/" style="margin-bottom:0">← 메인</a>
+      <a class="rosary-link" href="/mass/" style="margin-bottom:0">🕊️ 미사 순서</a>
+      <a class="rosary-link" href="/rosary/" style="margin-bottom:0">📿 묵주기도 도우미</a>
+    </div>
+  </footer>
+</div>
+
+<button type="button" class="fab-edit public-only" id="adminFab" aria-label="성가 입력하기">✏️ 성가 입력</button>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+  const FIELDS = [["entrance", "입당"], ["offertory", "봉헌"], ["communion", "성체"], ["recessional", "파견"]];
+  let state = { masses: [], fixed: [] };
+
+  // ----- dates (Asia/Seoul) -----
+  function seoulToday() {
+    const p = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    return p; // YYYY-MM-DD
+  }
+  function parseYMD(s) { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+  function fmtYMD(dt) { return dt.toISOString().slice(0, 10); }
+  function comingSunday() {
+    const t = parseYMD(seoulToday());
+    const add = (7 - t.getUTCDay()) % 7;
+    t.setUTCDate(t.getUTCDate() + add);
+    return fmtYMD(t);
+  }
+  function longDate(s) { const d = parseYMD(s); return `${d.getUTCFullYear()}년 ${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 (${DOW[d.getUTCDay()]})`; }
+  function shortDate(s) { const d = parseYMD(s); return `${d.getUTCMonth() + 1}.${d.getUTCDate()}`; }
+
+  // ----- toast / clipboard -----
+  let tt;
+  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 1800); }
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+    const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let ok = false; try { ok = document.execCommand("copy"); } catch {} ta.remove(); return ok;
+  }
+
+  // ----- API -----
+  async function api(path, opts = {}) {
+    const headers = { "content-type": "application/json" };
+    const r = await fetch("/api/" + path, { ...opts, headers });
+    let data = {}; try { data = await r.json(); } catch {}
+    if (!r.ok) { const e = new Error(data.error || "오류가 났어요 (" + r.status + ")"); e.status = r.status; throw e; }
+    return data;
+  }
+  async function refresh() {
+    state = await api("data");
+    render();
+    if (document.body.classList.contains("is-admin")) renderAdmin();
+  }
+
+  function currentMass() {
+    const today = seoulToday();
+    const asc = [...state.masses].sort((a, b) => a.date.localeCompare(b.date));
+    return asc.find((m) => m.date >= today) || asc[asc.length - 1] || null;
+  }
+
+  function kakaoText(m, withFixed) {
+    let s = `${shortDate(m.date)} 성가 🎶\n`;
+    s += FIELDS.map(([k, n]) => `${n} : ${(m[k] || []).join(", ")}`).join("\n");
+    if (m.memo) s += `\n\n${m.memo}`;
+    if (withFixed && state.fixed.length) {
+      s += "\n\n미사중 청년 미사곡 🙏\n\n" + state.fixed.map((f) => `${f.name} ${f.number}`).join("\n");
+    }
+    return s;
+  }
+
+  function songRows(m) {
+    return FIELDS.map(([k, n]) => {
+      const nums = m[k] || [];
+      const v = nums.length ? nums.map((x) => `<span class="num">${esc(x)}</span>`).join("") : `<span class="empty">–</span>`;
+      return `<div class="song"><span class="k">${n}</span><span class="v">${v}</span></div>`;
+    }).join("");
+  }
+
+  function render() {
+    const m = currentMass();
+    const app = $("#app");
+    if (!m) { app.innerHTML = `<div class="card hero"><div class="label">이번 미사 성가</div><p>아직 등록된 성가가 없어요.</p></div>` + fixedCard(); return; }
+    const today = seoulToday();
+    const label = m.date === today ? "오늘 미사 성가" : m.date > today ? "이번 미사 성가" : "가장 최근 미사 성가";
+    const others = state.masses.filter((x) => x.id !== m.id);
+    app.innerHTML = `
+      <section class="card hero">
+        <div class="label">${label}</div>
+        <h2>${esc(longDate(m.date))}</h2>
+        ${m.memo ? `<div class="memo">${esc(m.memo)}</div>` : ""}
+        <div class="songs">${songRows(m)}</div>
+        <label class="opt"><input type="checkbox" id="withFixed" ${localStorage.getItem("ym_withFixed") === "1" ? "checked" : ""}> 청년 미사곡도 같이 복사</label>
+        <div class="btns">
+          <button class="primary" id="copyBtn">💬 카톡으로 복사</button>
+          <button class="share" id="shareBtn">🔗 링크 공유</button>
+        </div>
+      </section>
+      ${fixedCard()}
+      <section class="card">
+        <h3>지난 미사 기록</h3>
+        ${others.length ? others.map((x) => `
+          <details>
+            <summary><span>${esc(longDate(x.date))}<span class="pre">${esc(FIELDS.map(([k]) => (x[k] || [])[0]).filter(Boolean).slice(0, 2).join(" · "))}…</span></span></summary>
+            <div class="hist-body">${x.memo ? `<div class="memo">${esc(x.memo)}</div>` : ""}${songRows(x)}
+              <button class="sm" data-copy="${esc(x.id)}" style="margin-top:8px">💬 이 날 성가 복사</button></div>
+          </details>`).join("") : `<p class="hint">아직 지난 기록이 없어요.</p>`}
+      </section>`;
+    $("#withFixed").onchange = (e) => localStorage.setItem("ym_withFixed", e.target.checked ? "1" : "0");
+    $("#copyBtn").onclick = async () => { (await copy(kakaoText(m, $("#withFixed").checked))) ? toast("복사했어요! 카톡에 붙여넣기 하세요") : toast("복사에 실패했어요"); };
+    $("#shareBtn").onclick = share;
+    app.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+      const x = state.masses.find((y) => y.id === b.dataset.copy);
+      (await copy(kakaoText(x, $("#withFixed").checked))) ? toast("복사했어요!") : toast("복사에 실패했어요");
+    });
+  }
+  function fixedCard() {
+    if (!state.fixed.length) return "";
+    return `<section class="card"><h3>청년 미사곡 <span style="font-weight:500;color:var(--muted);font-size:14px">· 매 미사 고정</span></h3>
+      <div class="fixed">${state.fixed.map((f) => `<div class="fx"><span class="n">${esc(f.name)}</span><span class="no">${esc(f.number)}</span></div>`).join("")}</div></section>`;
+  }
+  async function share() {
+    const url = location.origin + "/songs/";
+    if (navigator.share) { try { await navigator.share({ title: "청년미사 성가 🎶", text: "이번 미사 성가 번호예요", url }); return; } catch (e) { if (e.name === "AbortError") return; } }
+    (await copy(url)) ? toast("링크를 복사했어요") : toast(url);
+  }
+
+  // ----- admin -----
+  function enterAdmin() {
+    document.body.classList.add("is-admin");
+    if (location.hash !== "#edit" && location.hash !== "#admin") history.replaceState(null, "", location.pathname + "#edit");
+    resetForm(); renderAdmin(); $("#admin").scrollIntoView({ behavior: "smooth" });
+  }
+  $("#adminBtnTop").onclick = () => enterAdmin();
+  $("#adminFab").onclick = () => enterAdmin();
+  $("#logout").onclick = () => { document.body.classList.remove("is-admin"); history.replaceState(null, "", location.pathname); window.scrollTo(0, 0); };
+
+  function comInputs(vals) {
+    const box = $("#fCom"); box.innerHTML = "";
+    (vals.length ? vals : [""]).forEach((v) => addComInput(v));
+  }
+  function addComInput(v = "") {
+    const row = document.createElement("div"); row.className = "row";
+    row.innerHTML = `<input inputmode="numeric" placeholder="148" value="${esc(v)}"><button type="button" class="sm ghost" aria-label="삭제">✕</button>`;
+    row.querySelector("button").onclick = () => { if ($("#fCom").children.length > 1) row.remove(); else row.querySelector("input").value = ""; };
+    $("#fCom").appendChild(row);
+  }
+  $("#addCom").onclick = () => addComInput();
+  const splitNums = (s) => String(s || "").split(/[,，\/\s]+/).map((x) => x.trim()).filter(Boolean);
+
+  function resetForm() {
+    $("#fId").value = ""; $("#fDate").value = comingSunday();
+    $("#fEnt").value = $("#fOff").value = $("#fRec").value = $("#fMemo").value = "";
+    comInputs([]); $("#formTitle").textContent = "미사 성가 등록"; $("#saveBtn").textContent = "저장하기";
+    $("#cancelEdit").style.display = "none"; $("#formErr").textContent = "";
+  }
+  function fillForm(m) {
+    $("#fId").value = m.id || ""; $("#fDate").value = m.date || comingSunday();
+    $("#fEnt").value = (m.entrance || []).join(", "); $("#fOff").value = (m.offertory || []).join(", ");
+    $("#fRec").value = (m.recessional || []).join(", "); $("#fMemo").value = m.memo || "";
+    comInputs(m.communion || []);
+  }
+  $("#cancelEdit").onclick = resetForm;
+
+  $("#massForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const id = $("#fId").value;
+    const body = {
+      date: $("#fDate").value, memo: $("#fMemo").value.trim(),
+      entrance: splitNums($("#fEnt").value), offertory: splitNums($("#fOff").value),
+      communion: [...$("#fCom").querySelectorAll("input")].flatMap((i) => splitNums(i.value)),
+      recessional: splitNums($("#fRec").value),
+    };
+    if (!body.date) { $("#formErr").textContent = "날짜를 골라 주세요."; return; }
+    const dup = state.masses.find((m) => m.date === body.date && m.id !== id);
+    if (dup && !confirm(`${longDate(body.date)}에 이미 등록된 미사가 있어요. 그래도 따로 추가할까요?`)) return;
+    try {
+      $("#saveBtn").disabled = true;
+      await api(id ? "masses/" + encodeURIComponent(id) : "masses", { method: id ? "PUT" : "POST", body: JSON.stringify(body) });
+      toast(id ? "수정했어요" : "저장했어요"); resetForm(); await refresh();
+    } catch (err) { handleErr(err, "#formErr"); } finally { $("#saveBtn").disabled = false; }
+  };
+
+  function handleErr(err, sel) { $(sel).textContent = err.message; }
+
+  function timeAgo(iso) {
+    const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return "방금"; if (s < 3600) return Math.floor(s / 60) + "분 전";
+    if (s < 86400) return Math.floor(s / 3600) + "시간 전"; return Math.floor(s / 86400) + "일 전";
+  }
+  let lastChange = null;
+  async function loadHistory() {
+    try {
+      const h = await api("history"); lastChange = h.last;
+      $("#undoInfo").textContent = h.last ? `마지막 변경: ${h.last.action} (${timeAgo(h.last.at)}) · 되돌릴 수 있는 기록 ${h.count}개` : "되돌릴 변경이 없어요.";
+      $("#undoBtn").disabled = !h.last;
+    } catch { $("#undoInfo").textContent = ""; }
+  }
+  $("#undoBtn").onclick = async () => {
+    if (!lastChange) return;
+    if (!confirm(`'${lastChange.action}' 변경을 되돌릴까요?`)) return;
+    try { const r = await api("undo", { method: "POST", body: "{}" }); toast(`'${r.undone}' 되돌렸어요`); resetForm(); await refresh(); }
+    catch (err) { alert(err.message); }
+  };
+
+  function renderAdmin() {
+    loadHistory();
+    $("#adminList").innerHTML = state.masses.map((m) => `
+      <div class="item"><div><div><b>${esc(longDate(m.date))}</b></div>
+        <div class="meta">${esc(FIELDS.map(([k, n]) => `${n} ${(m[k] || []).join(",") || "-"}`).join(" · "))}</div></div>
+        <div class="row"><button class="sm" data-edit="${esc(m.id)}">수정</button><button class="sm danger" data-del="${esc(m.id)}">삭제</button></div></div>`).join("") || `<p class="hint">등록된 미사가 없어요.</p>`;
+    $("#adminList").querySelectorAll("[data-edit]").forEach((b) => b.onclick = () => {
+      const m = state.masses.find((x) => x.id === b.dataset.edit); fillForm(m);
+      $("#formTitle").textContent = "미사 성가 수정"; $("#saveBtn").textContent = "수정 저장"; $("#cancelEdit").style.display = "";
+      $("#formTitle").scrollIntoView({ behavior: "smooth" });
+    });
+    $("#adminList").querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+      const m = state.masses.find((x) => x.id === b.dataset.del);
+      if (!confirm(`${longDate(m.date)} 성가를 삭제할까요?`)) return;
+      try { await api("masses/" + encodeURIComponent(m.id), { method: "DELETE" }); toast("삭제했어요"); await refresh(); }
+      catch (err) { alert(err.message); }
+    });
+    const fx = $("#fxEdit"); fx.innerHTML = "";
+    state.fixed.forEach((f) => addFxRow(f));
+  }
+  function addFxRow(f = { name: "", number: "" }) {
+    const row = document.createElement("div"); row.className = "row";
+    row.innerHTML = `<input type="text" placeholder="이름 (예: 자비송)" value="${esc(f.name)}"><input inputmode="numeric" placeholder="번호" value="${esc(f.number)}" style="max-width:96px"><button type="button" class="sm ghost" aria-label="삭제">✕</button>`;
+    row.querySelector("button").onclick = () => row.remove();
+    $("#fxEdit").appendChild(row);
+  }
+  $("#addFx").onclick = () => addFxRow();
+  $("#saveFx").onclick = async () => {
+    const fixed = [...$("#fxEdit").children].map((r) => { const [a, b] = r.querySelectorAll("input"); return { name: a.value.trim(), number: b.value.trim() }; }).filter((x) => x.name || x.number);
+    try { await api("fixed", { method: "PUT", body: JSON.stringify({ fixed }) }); $("#fxErr").textContent = ""; toast("미사곡을 저장했어요"); await refresh(); }
+    catch (err) { handleErr(err, "#fxErr"); }
+  };
+
+  refresh().catch((e) => { $("#app").innerHTML = `<div class="card"><p>성가를 불러오지 못했어요. 잠시 후 다시 열어 주세요.</p><p class="hint">${esc(e.message)}</p></div>`; });
+  if (location.hash === "#admin" || location.hash === "#edit") enterAdmin();
+})();
+</script>
+</body>
+</html>

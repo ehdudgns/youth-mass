@@ -1,0 +1,16 @@
+{
+  "name": "youth-mass",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.8"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:mass": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
