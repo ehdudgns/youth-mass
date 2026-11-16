@@ -1,6 +1,7 @@
 :root{
     --bg:#f7f3ec; --card:#fffdf9; --ink:#2b2a33; --muted:#7b7469; --line:#e7dfd1;
     --navy:#2f3a56; --gold:#b08d4a; --gold-soft:#f3ead7;
+    --commentator:#5b7a4a; --commentator-soft:#e8f0e4;
     --r:18px;
   }
   *{box-sizing:border-box}
@@ -55,12 +56,10 @@
   .hymn-num{display:block;font-size:30px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;
     letter-spacing:-.5px;line-height:1.15}
   .hymn-num.empty{color:#c8bfae;font-size:22px;font-weight:700}
-  .hymn.hymn-announce{flex:1 1 100%;max-width:100%;padding:12px 14px}
-  .hymn-sentence{display:block;font-size:17px;font-weight:800;color:var(--navy);letter-spacing:-.2px;line-height:1.45}
-  .hymn.hymn-announce.empty .hymn-sentence{color:#a89f8e;font-weight:700}
   .resp{margin:8px 0 0;padding:10px 12px;background:var(--bg);border-radius:12px;
     font-size:14px;color:var(--navy);white-space:normal;line-height:1.6}
-  .note{margin:8px 0 0;font-size:13px;color:var(--muted)}
+  .note{margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+  .note a{color:var(--gold);text-decoration:underline}
   .liturgy{margin-top:12px;display:flex;flex-direction:column;gap:14px}
   .liturgy-unit{display:flex;flex-direction:column;gap:8px}
   .liturgy-tag{align-self:flex-start;font-size:12px;font-weight:800;color:var(--gold);
@@ -71,7 +70,58 @@
     background:#fff;margin-bottom:6px}
   .role-block[data-role="faithful"] .role-label{border-style:dashed}
   .role-text{font-size:15px;white-space:pre-line;line-height:1.65;color:var(--navy)}
+
+  /* 해설자 블록 */
+  .commentator-block{
+    margin:0;padding:12px 14px;border:2px solid var(--commentator);border-radius:14px;
+    background:var(--commentator-soft)
+  }
+  .commentator-label{
+    display:inline-block;font-weight:800;font-size:11px;letter-spacing:.04em;
+    padding:2px 8px;border-radius:999px;border:2px solid var(--commentator);
+    color:#fff;background:var(--commentator);margin-bottom:6px
+  }
+  .commentator-text{font-size:15px;line-height:1.65;color:var(--ink)}
+
+  /* 자세 안내 */
+  .posture-cue{
+    display:inline-block;font-size:14px;font-weight:700;color:var(--commentator);
+    background:var(--commentator-soft);border:1px solid var(--commentator);
+    border-radius:999px;padding:4px 12px;margin-bottom:4px
+  }
+
+  /* 성가 안내 (해설자용) */
+  .hymn-announce-line{
+    font-size:16px;font-weight:700;color:var(--commentator);
+    background:var(--commentator-soft);border:1px solid var(--commentator);
+    border-radius:12px;padding:10px 14px;margin:4px 0
+  }
+  .hymn-announce-line.empty{color:#8a9f7e;border-style:dashed}
+
+  /* 기도문 블록 */
+  .prayer-block{
+    margin:4px 0;padding:12px 14px;background:var(--bg);border:1px solid var(--line);
+    border-radius:14px
+  }
+  .prayer-block.collapsible{cursor:pointer}
+  .prayer-block.collapsible > summary{list-style:none}
+  .prayer-block.collapsible > summary::-webkit-details-marker{display:none}
+  .prayer-title{
+    font-size:14px;font-weight:800;color:var(--navy);margin-bottom:8px;
+    display:flex;align-items:center;gap:8px
+  }
+  .prayer-block.collapsible > summary.prayer-title::after{
+    content:"▾";color:var(--gold);font-size:12px;margin-left:auto;transition:transform .2s
+  }
+  .prayer-block.collapsible[open] > summary.prayer-title::after{transform:rotate(180deg)}
+  .prayer-role{
+    font-size:11px;font-weight:700;color:var(--muted);background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:2px 8px
+  }
+  .prayer-text{font-size:14px;line-height:1.7;color:var(--navy);white-space:normal}
+
   .source{margin:18px 8px 0;text-align:center;font-size:12px;color:var(--muted);line-height:1.7}
+  .source a{color:var(--gold);text-decoration:underline}
   footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
   @media (min-width:640px){
     header h1{font-size:26px}
