@@ -191,11 +191,7 @@ function buildPersonalSteps() {
 function buildMassSteps(decades) {
     const n = Math.max(1, Math.min(5, decades | 0));
     const list = [];
-    addStep(list, "openGuide", "cross", {
-        phase: "intro",
-        pending: true,
-        pendingLabel: PENDING.open,
-    });
+    addStep(list, "openGuide", "cross", { phase: "intro" });
     addStep(list, "sign", "cross", { phase: "intro" });
     addStep(list, "creed", "cross", { phase: "intro" });
     addStep(list, "our", "P1", { phase: "intro" });
@@ -613,11 +609,24 @@ function initRosary() {
     function render() {
         const s = STEPS[state.step];
         const m = M[state.mystery];
+        const mysteryShort = m.name.replace(/의 신비$/, "");
         let name;
         let text = "";
         let note = "";
         let html = null;
-        if (s.pending) {
+        if (s.key === "openGuide") {
+            name = "미사 전 안내";
+            const guideLines = [
+                "묵주기도를 바치겠습니다. 기도는 좌우교송으로 바치며, 해설대쪽 신자께서 선창하겠습니다",
+                "",
+                "지향은 세계청년대회 준비를 위하여 바칩니다",
+                "",
+                `오늘은 ${mysteryShort}신비를 바치겠습니다`,
+            ].join("\n");
+            html = `<div class="role-block" data-role="commentator"><div class="role-label">해설자</div><div class="role-text">${guideLines}</div></div>`;
+            note = "";
+        }
+        else if (s.pending) {
             name = s.pendingLabel || "";
             html = pendingHTML(s.pendingLabel || "");
             note = "확인 전이니 다음으로 넘기셔도 됩니다.";
@@ -647,8 +656,11 @@ function initRosary() {
         if (tap)
             tap.textContent = s.pending ? "건너뛰고 다음으로 ›" : "눌러서 다음으로 ›";
         let where;
-        if (s.pending) {
-            where = s.key === "openGuide" ? "시작 안내" : "마침 안내";
+        if (s.key === "openGuide") {
+            where = "시작 안내";
+        }
+        else if (s.pending) {
+            where = "마침 안내";
         }
         else if (s.key === "remainRemark") {
             where = "해설자 안내";
