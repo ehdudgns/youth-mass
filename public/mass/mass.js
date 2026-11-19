@@ -68,7 +68,6 @@ export const MASS_SECTIONS = [
                 roles: ["해설자", "성가대"],
                 note: "사제와 봉사자들이 제대로 나아가는 동안 입당 노래를 합니다.",
                 liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
                     { kind: "hymn-announce", slot: "entrance", template: "입당 성가 {num}번을 부르겠습니다." },
                 ],
                 hymns: [{ kind: "week", slot: "entrance", label: "입당" }],
@@ -106,9 +105,6 @@ export const MASS_SECTIONS = [
                 title: "본기도",
                 roles: ["사제", "신자"],
                 response: "사제: 기도합시다.\n신자(마침): 아멘.",
-                liturgy: [
-                    { kind: "posture", text: "앉으십시오." },
-                ],
             },
         ],
     },
@@ -149,9 +145,6 @@ export const MASS_SECTIONS = [
                 title: "복음 환호송",
                 roles: ["성가대", "신자"],
                 note: "알렐루야를 합니다. 사순 시기에는 알렐루야 대신 다른 환호를 할 수 있습니다.",
-                liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
-                ],
             },
             {
                 id: "gospel",
@@ -164,9 +157,6 @@ export const MASS_SECTIONS = [
                 title: "강론",
                 roles: ["사제"],
                 note: "모든 주일과 의무 축일에는 강론을 합니다.",
-                liturgy: [
-                    { kind: "posture", text: "앉으십시오." },
-                ],
             },
             {
                 id: "creed",
@@ -174,7 +164,6 @@ export const MASS_SECTIONS = [
                 roles: ["신자"],
                 note: "신경을 노래하거나 낭송합니다. 특히 사순 시기와 부활 시기에는 사도 신경을 바칠 수 있습니다.",
                 liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
                     { kind: "prayer", title: "니케아-콘스탄티노폴리스 신경", role: "모두", text: PRAYERS.니케아신경, collapsible: true },
                     { kind: "prayer", title: "사도 신경 (사순·부활 시기)", role: "모두", text: PRAYERS.사도신경, collapsible: true },
                 ],
@@ -197,7 +186,6 @@ export const MASS_SECTIONS = [
                 roles: ["해설자", "성가대", "사제", "신자"],
                 note: "신경과 보편 지향 기도가 끝나면 봉헌 노래를 시작합니다.",
                 liturgy: [
-                    { kind: "posture", text: "앉으십시오." },
                     { kind: "hymn-announce", slot: "offertory", template: "봉헌 성가 {num}번을 부르겠습니다." },
                 ],
                 hymns: [{ kind: "week", slot: "offertory", label: "봉헌" }],
@@ -207,9 +195,6 @@ export const MASS_SECTIONS = [
                 title: "예물 기도",
                 roles: ["사제", "신자"],
                 response: "사제: 형제 여러분, 우리가 바치는 이 제사를 전능하신 하느님 아버지께서 기꺼이 받아 주시도록 기도합시다.\n신자: 사제의 손으로 바치는 이 제사가 주님의 이름에는 찬미와 영광이 되고 저희와 온 교회에는 도움이 되게 하소서.",
-                liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
-                ],
             },
             {
                 id: "preface",
@@ -232,9 +217,6 @@ export const MASS_SECTIONS = [
                 title: "성찬 기도",
                 roles: ["사제"],
                 note: "사제가 감사 기도(성찬 기도)를 바칩니다.",
-                liturgy: [
-                    { kind: "posture", text: "무릎을 꿇으십시오." },
-                ],
             },
             {
                 id: "mystery",
@@ -263,7 +245,6 @@ export const MASS_SECTIONS = [
                 roles: ["사제", "신자", "성가대"],
                 note: "사제의 초대에 따라 모두 함께 주님의 기도를 바칩니다.",
                 liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
                     { kind: "prayer", title: "주님의 기도", role: "모두", text: PRAYERS.주님의기도, collapsible: false },
                 ],
                 hymns: [{ kind: "fixed", fixedName: "주님의 기도", label: "주님의 기도" }],
@@ -312,9 +293,6 @@ export const MASS_SECTIONS = [
                 roles: ["사제", "신자"],
                 response: "사제: 기도합시다.\n신자: 아멘.",
                 note: "그전에 잠깐 침묵하며 기도할 수 있습니다.",
-                liturgy: [
-                    { kind: "posture", text: "앉으십시오." },
-                ],
             },
         ],
     },
@@ -333,9 +311,6 @@ export const MASS_SECTIONS = [
                 title: "강복",
                 roles: ["사제", "신자"],
                 response: "사제: 주님께서 여러분과 함께.\n신자: 또한 사제의 영과 함께.\n사제: 전능하신 천주 성부와 성자와 성령께서는 여기 모인 모든 이에게 강복하소서.\n신자: 아멘.",
-                liturgy: [
-                    { kind: "posture", text: "일어서십시오." },
-                ],
             },
             {
                 id: "dismissal",
@@ -481,12 +456,16 @@ export function renderOrder(opts) {
     const { mass, fixed, today, sunday, loadError } = opts;
     const dateLine = sundayChipText(today, sunday);
     const songLine = massSongChipText(mass, today, !!loadError);
-    const sections = MASS_SECTIONS.map((sec) => {
+    const tabButtons = MASS_SECTIONS.map((sec, idx) => {
+        const selected = idx === 0 ? ' aria-selected="true"' : ' aria-selected="false"';
+        return `<button type="button" role="tab" id="tab-${esc(sec.id)}" data-tab="${esc(sec.id)}"${selected}>${esc(sec.title)}</button>`;
+    }).join("");
+    const tabPanels = MASS_SECTIONS.map((sec, idx) => {
         const body = sec.steps.map((st) => stepHTML(st, mass, fixed)).join("");
-        return `<details class="section" open>
-      <summary><span class="sec-title">${esc(sec.title)}</span></summary>
+        const hidden = idx === 0 ? "" : ' hidden';
+        return `<div class="tab-panel" id="panel-${esc(sec.id)}" role="tabpanel" data-panel="${esc(sec.id)}"${hidden}>
       <div class="sec-body">${body}</div>
-    </details>`;
+    </div>`;
     }).join("");
     return `<header>
     <div class="cross">✝</div>
@@ -495,7 +474,8 @@ export function renderOrder(opts) {
     <div class="date-chip">${esc(dateLine)}</div>
     <div class="song-chip${mass ? "" : " muted"}">${esc(songLine)}</div>
   </header>
-  <div class="order">${sections}</div>
+  <div class="mass-tabs" role="tablist" aria-label="미사 순서">${tabButtons}</div>
+  <div class="order">${tabPanels}</div>
   <p class="source">순서와 기도문은 한국천주교주교회의 『미사 통상문』(<a href="https://missale.cbck.or.kr/OrdoMissae" target="_blank" rel="noopener">missale.cbck.or.kr</a>)을 따랐습니다.<br>그날의 독서와 복음은 <a href="https://missa.cbck.or.kr/" target="_blank" rel="noopener">missa.cbck.or.kr</a>에서 확인하세요.</p>`;
 }
 async function loadData() {
@@ -509,6 +489,32 @@ async function loadData() {
     catch {
         return { error: true };
     }
+}
+function initMassTabs() {
+    const tablist = document.querySelector(".mass-tabs");
+    if (!tablist)
+        return;
+    const tabs = tablist.querySelectorAll('[role="tab"]');
+    const panels = document.querySelectorAll(".tab-panel");
+    function selectTab(tabId) {
+        tabs.forEach((t) => {
+            const isSelected = t.dataset.tab === tabId;
+            t.setAttribute("aria-selected", String(isSelected));
+        });
+        panels.forEach((p) => {
+            const isActive = p.dataset.panel === tabId;
+            p.hidden = !isActive;
+        });
+    }
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            const tabId = tab.dataset.tab;
+            if (tabId) {
+                selectTab(tabId);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+        });
+    });
 }
 export async function mount(root) {
     root.innerHTML = `
@@ -530,6 +536,7 @@ export async function mount(root) {
     const fixed = data?.fixed ?? [];
     const mass = currentMass(masses, today);
     main.innerHTML = renderOrder({ mass, fixed, today, sunday, loadError: !!error });
+    initMassTabs();
 }
 function boot() {
     const root = document.getElementById("app");

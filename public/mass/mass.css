@@ -19,16 +19,10 @@
   .song-chip{display:block;width:fit-content;margin:8px auto 0;background:var(--card);border:1px solid var(--line);font-weight:600}
   .song-chip.muted{color:var(--muted);font-weight:500}
   .loading{text-align:center;color:var(--muted);padding:40px 0}
-  .order{margin-top:16px}
-  details.section{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-    margin-bottom:12px;box-shadow:0 2px 10px rgba(47,58,86,.05);overflow:hidden}
-  details.section summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;
-    justify-content:space-between;align-items:center;gap:8px;user-select:none}
-  details.section summary::-webkit-details-marker{display:none}
-  .sec-title{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:-.3px}
-  details.section summary::after{content:"▾";color:var(--gold);font-size:16px;transition:transform .2s}
-  details.section[open] summary::after{transform:rotate(180deg)}
-  .sec-body{padding:0 14px 14px;border-top:1px dashed var(--line)}
+  .order{margin-top:8px}
+  .tab-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:0 2px 10px rgba(47,58,86,.05);overflow:hidden}
+  .sec-body{padding:14px 14px 14px}
   .step{padding:14px 4px 12px;border-bottom:1px dashed var(--line)}
   .step:last-child{border-bottom:0;padding-bottom:2px}
   .step-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 10px}
@@ -123,7 +117,31 @@
   .source{margin:18px 8px 0;text-align:center;font-size:12px;color:var(--muted);line-height:1.7}
   .source a{color:var(--gold);text-decoration:underline}
   footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+
+  /* 미사 탭 UI */
+  .mass-tabs{
+    display:flex;gap:6px;padding:12px 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;scroll-snap-type:x mandatory
+  }
+  .mass-tabs::-webkit-scrollbar{display:none}
+  .mass-tabs button{
+    flex:0 0 auto;scroll-snap-align:start;
+    font:inherit;font-weight:700;font-size:13px;
+    padding:10px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;
+    transition:background .15s, color .15s, border-color .15s
+  }
+  .mass-tabs button[aria-selected="true"]{
+    background:var(--navy);color:#fff;border-color:var(--navy)
+  }
+  .mass-tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .tab-panel{animation:tabFadeIn .2s ease}
+  .tab-panel[hidden]{display:none}
+  @keyframes tabFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
   @media (min-width:640px){
     header h1{font-size:26px}
     .hymn-num{font-size:32px}
+    .mass-tabs{justify-content:center}
+    .mass-tabs button{font-size:14px;padding:12px 18px}
   }
