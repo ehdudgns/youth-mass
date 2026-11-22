@@ -1,5 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import { timingSafeEqual, createHash, randomUUID } from "node:crypto";
+import { fetchDailyMissa } from "./_shared/daily-missa.mjs";
 
 const SEED_FIXED = [
   { name: "자비송", number: "380" },
@@ -58,6 +59,14 @@ function cleanNums(v) {
   const arr = Array.isArray(v) ? v : String(v ?? "").split(/[,，\/]+/);
   return arr.map((x) => String(x).trim()).filter(Boolean).slice(0, 8).filter((x) => NUM_RE.test(x));
 }
+function cleanSecondCollection(v) {
+  const s = String(v ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+  return s || null;
+}
+
 function cleanMass(b, id) {
   const date = String(b.date || "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("날짜 형식이 올바르지 않아요.");
@@ -69,6 +78,7 @@ function cleanMass(b, id) {
     offertory: cleanNums(b.offertory),
     communion: cleanNums(b.communion),
     recessional: cleanNums(b.recessional),
+    secondCollection: cleanSecondCollection(b.secondCollection),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -84,6 +94,21 @@ export default async (req) => {
     if (method === "GET" && parts[0] === "data") {
       const d = await load();
       return json({ masses: sortMasses(d.masses), fixed: d.fixed });
+    }
+
+    if (method === "GET" && parts[0] === "daily-missa") {
+      const date = url.searchParams.get("date") || "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return json({ error: "date=YYYY-MM-DD 가 필요해요." }, 400);
+      }
+      const data = await fetchDailyMissa(date);
+      return new Response(JSON.stringify(data), {
+        status: 200,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "public, max-age=3600, stale-while-revalidate=86400",
+        },
+      });
     }
 
     if (method === "GET" && parts[0] === "history") {

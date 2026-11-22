@@ -10,6 +10,7 @@ const SITE_LINKS = [
     { id: "home", href: "/", label: "← 메인", short: "← 메인" },
     { id: "songs", href: "/songs/", label: "🎶 이번 주 성가", short: "🎶 성가" },
     { id: "mass", href: "/mass/", label: "🕊️ 미사 순서", short: "🕊️ 미사 순서" },
+    { id: "readings", href: "/readings/", label: "📖 오늘 독서", short: "📖 독서" },
     { id: "rosary", href: "/rosary/", label: "📿 묵주기도", short: "📿 묵주기도" },
 ];
 export function esc(s) {
@@ -77,6 +78,48 @@ export function sundayChipText(today = seoulToday(), sunday = comingSunday(today
     return today === sunday
         ? `오늘 · ${longDate(today)} 주일`
         : `다가오는 주일 ${longDate(sunday)}`;
+}
+/** 2차 헌금 목적 프리셋 (직접 입력도 가능) */
+export const SECOND_COLLECTION_PURPOSES = [
+    "성전 건축",
+    "이웃돕기",
+    "선교",
+    "사회복지",
+    "재해 구호",
+    "청년부",
+    "본당 행사",
+];
+export const SECOND_COLLECTION_MAX_LEN = 40;
+export function eulReul(word) {
+    const ch = word.trim().slice(-1);
+    if (!ch)
+        return "을";
+    const code = ch.charCodeAt(0);
+    if (code < 0xac00 || code > 0xd7a3)
+        return "을";
+    return (code - 0xac00) % 28 === 0 ? "를" : "을";
+}
+export function normalizeSecondCollection(v) {
+    const s = String(v ?? "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, SECOND_COLLECTION_MAX_LEN);
+    if (!s)
+        return null;
+    return s;
+}
+export function isPresetSecondCollection(v) {
+    const s = String(v || "").trim();
+    return SECOND_COLLECTION_PURPOSES.includes(s);
+}
+export function secondCollectionAnnounce(purpose, when) {
+    const p = String(purpose || "").trim();
+    if (!p)
+        return "";
+    const particle = eulReul(p);
+    if (when === "pre")
+        return `오늘은 ${p}${particle} 위한 2차 헌금이 있겠습니다.`;
+    return `오늘은 ${p}${particle} 위한 2차 헌금이 있습니다.`;
 }
 export function songRowsHTML(m) {
     return HYMN_FIELDS.map(([k, n]) => {

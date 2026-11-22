@@ -15,6 +15,7 @@
     "src/home.ts",
     "src/mass.ts",
     "src/songs.ts",
+    "src/readings.ts",
     "src/rosary.ts",
     "src/parse-kakao-hymn.d.ts"
   ]

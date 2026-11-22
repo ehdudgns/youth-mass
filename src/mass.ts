@@ -13,6 +13,11 @@ import {
   sundayChipText,
   massSongChipText,
   mountSiteChrome,
+  secondCollectionAnnounce,
+  SECOND_COLLECTION_PURPOSES,
+  normalizeSecondCollection,
+  isPresetSecondCollection,
+  SECOND_COLLECTION_MAX_LEN,
 } from "./hymns.js";
 
 export { seoulToday, comingSunday, longDate, currentMass };
@@ -29,6 +34,8 @@ export interface MassRecord {
   offertory: string[];
   communion: string[];
   recessional: string[];
+  /** 2차 헌금 목적 (칩 선택값). 없으면 2차 헌금 없음 */
+  secondCollection?: string | null;
   updatedAt?: string;
 }
 
@@ -40,6 +47,27 @@ export interface FixedHymn {
 export interface ApiData {
   masses: MassRecord[];
   fixed: FixedHymn[];
+}
+
+export interface DailyMissaSection {
+  text?: string;
+  citation?: string;
+  source?: string;
+  ref?: string;
+}
+
+export interface DailyMissa {
+  date: string | null;
+  dateLabel?: string | null;
+  title: string;
+  titlePlain: string;
+  /** 연중/사순/대림/부활 제N주일 (대축일 대체 시 null) */
+  weekLabel?: string | null;
+  /** 「오늘 전례」 첫 문장 (오늘은 …입니다.) */
+  announce?: string | null;
+  color?: string;
+  sourceUrl?: string | null;
+  sections: Record<string, DailyMissaSection>;
 }
 
 export interface HymnBinding {
@@ -75,6 +103,14 @@ export interface MassSection {
   steps: MassStep[];
 }
 
+/** 미사 탭에서 독서 페이지로 이동하는 메뉴 */
+const MASS_READING_LINKS = [
+  { href: "/readings/#reading1", label: "제1독서" },
+  { href: "/readings/#psalm", label: "화답송" },
+  { href: "/readings/#reading2", label: "제2독서" },
+  { href: "/readings/#gospel", label: "복음" },
+] as const;
+
 /** 공식 기도문 – CBCK 미사 통상문 (missale.cbck.or.kr/OrdoMissae) 출처 */
 export const PRAYERS = {
   고백기도:
@@ -83,8 +119,6 @@ export const PRAYERS = {
     "주님, 자비를 베푸소서.\n주님, 자비를 베푸소서.\n그리스도님, 자비를 베푸소서.\n그리스도님, 자비를 베푸소서.\n주님, 자비를 베푸소서.\n주님, 자비를 베푸소서.",
   대영광송:
     "하늘 높은 데서는 하느님께 영광.\n땅에서는 주님께서 사랑하시는 사람들에게 평화.\n주 하느님, 하늘의 임금님\n전능하신 아버지 하느님\n주님을 기리나이다, 찬미하나이다.\n주님을 흠숭하나이다, 찬양하나이다.\n주님 영광 크시오니 감사하나이다.\n\n외아들 주 예수 그리스도님\n주 하느님, 성부의 아드님\n하느님의 어린양\n세상의 죄를 없애시는 주님, 저희에게 자비를 베푸소서.\n세상의 죄를 없애시는 주님, 저희의 기도를 들어주소서.\n성부 오른편에 앉아 계신 주님, 저희에게 자비를 베푸소서.\n\n홀로 거룩하시고, 홀로 주님이시며,\n홀로 높으신 예수 그리스도님\n성령과 함께\n아버지 하느님의 영광 안에 계시나이다.\n아멘.",
-  니케아신경:
-    "한 분이신 하느님을 저는 믿나이다.\n전능하신 아버지, 하늘과 땅과\n유형무형한 만물의 창조주를 믿나이다.\n\n또한 한 분이신 주 예수 그리스도,\n하느님의 외아들\n영원으로부터 성부에게서 나신 분을 믿나이다.\n하느님에게서 나신 하느님, 빛에서 나신 빛\n참하느님에게서 나신 참하느님으로서,\n창조되지 않고 나시어\n성부와 한 본체로서 만물을 창조하셨음을 믿나이다.\n\n성자께서는 저희 인간을 위하여,\n저희 구원을 위하여 하늘에서 내려오셨음을 믿나이다.\n또한 성령으로 인하여 동정 마리아에게서\n육신을 취하시어 사람이 되셨음을 믿나이다.\n\n본시오 빌라도 통치 아래서 저희를 위하여\n십자가에 못 박혀 수난하고 묻히셨으며\n성서 말씀대로 사흗날에 부활하시어\n하늘에 올라 성부 오른편에 앉아 계심을 믿나이다.\n그분께서는 산 이와 죽은 이를 심판하러\n영광 속에 다시 오시리니\n그분의 나라는 끝이 없으리이다.\n\n또한 주님이시며 생명을 주시는 성령을 믿나이다.\n성령께서는 성부와 성자에게서 발하시고\n성부와 성자와 더불어 영광과 흠숭을 받으시며\n예언자들을 통하여 말씀하셨나이다.\n\n하나이고 거룩하고 보편되며\n사도로부터 이어 오는 교회를 믿나이다.\n죄를 씻는 유일한 세례를 믿으며\n죽은 이들의 부활과 내세의 삶을 기다리나이다.\n아멘.",
   사도신경:
     "전능하신 천주 성부\n천지의 창조주를 저는 믿나이다.\n\n그 외아들 우리 주 예수 그리스도님\n성령으로 인하여 동정 마리아께 잉태되어 나시고\n본시오 빌라도 통치 아래서 고난을 받으시고\n십자가에 못 박혀 돌아가시고 묻히셨으며\n저승에 가시어 사흗날에 죽은 이들 가운데서 부활하시고\n하늘에 올라 전능하신 천주 성부 오른편에 앉으시며\n그리로부터 산 이와 죽은 이를 심판하러 오시리라 믿나이다.\n\n성령을 믿으며\n거룩하고 보편된 교회와 모든 성인의 통공을 믿으며\n죄의 용서와 육신의 부활을 믿으며\n영원한 삶을 믿나이다.\n아멘.",
   거룩하시도다:
@@ -95,22 +129,34 @@ export const PRAYERS = {
     "하느님의 어린양, 세상의 죄를 없애시는 주님,\n자비를 베푸소서.\n하느님의 어린양, 세상의 죄를 없애시는 주님,\n자비를 베푸소서.\n하느님의 어린양, 세상의 죄를 없애시는 주님,\n평화를 주소서.",
   영성체전응답:
     "주님, 제 안에 주님을 모시기에 합당치 않사오나\n한 말씀만 하소서.\n제 영혼이 곧 나으리이다.",
-  삼종기도마침:
-    "기도합시다.\n하느님, 천사의 아룀으로\n성자께서 사람이 되심을 알았으니\n성자의 수난과 십자가로\n부활의 영광에 이르는 은총을\n저희에게 내려 주소서.\n우리 주 그리스도를 통하여 비나이다.",
-  부활삼종기도마침:
-    "기도합시다.\n하느님, 성자 우리 주 예수 그리스도의 부활로\n온 세상을 기쁘게 하셨으니\n성자의 어머니 동정 마리아의 도움으로\n영생의 즐거움을 얻게 하소서.\n우리 주 그리스도를 통하여 비나이다.",
+  /** 2027 서울 세계청년대회 공식 기도문 (wyd.catholic.or.kr) */
+  WYD공식기도문:
+    "젊은이를 사랑하시는 주님,\n저희를 주님의 무한한 사랑과 자비로 초대해 주심에 감사드립니다.\n\n하느님 아버지,\n저희 자신을 당신께 맡겨 드리오니,\n온 세상 젊은이들이 교회의 품 안에서 위로받고\n친교와 일치의 기쁨을 누리게 하소서.\n\n'이미 그리고 영원히' 세상을 이기신 그리스도님,\n\"용기를 내어라.\" 하신 당신의 말씀 안에서\n온 세상 모든 이가 희망을 발견하고,\n사랑과 용서의 십자가가 세상에 대한 승리임을 깨닫게 하소서.\n\n사랑의 불꽃이신 성령님,\n당신의 놀라운 손길로 이 땅에 복음의 씨앗을 심으셨으니,\n한국 순교 성인들의 믿음이 저희 가슴에도 타올라\n평화와 사랑과 진리의 복음을 살아가는 제자가 되게 하소서.\n\n주님, 이 세계청년대회의 순례 여정을 통해\n저희 모두가 서로의 목소리를 경청하고\n그 안에서 당신의 뜻을 찾으며,\n모든 하느님 백성이 함께 걷는 시노드 교회가 되게 하소서.\n아멘.",
 } as const;
+
+export type ClosingPrayerMode = "wyd" | "daily";
+
+export function normalizeClosingPrayerMode(v: string | null | undefined): ClosingPrayerMode {
+  return v === "daily" ? "daily" : "wyd";
+}
+
+/** 매일미사 인쇄본 쪽수 (숫자만, 웹에는 쪽수 정보가 없음) */
+export function normalizeMissaPage(v: string | null | undefined): string {
+  return String(v ?? "")
+    .replace(/[^\d]/g, "")
+    .slice(0, 4);
+}
 
 /** 통상문에 고정된 미사곡 기본 번호. /api/data의 fixed가 있으면 그 값을 우선한다. */
 export const DEFAULT_FIXED: Readonly<Record<string, string>> = {
-  "자비송": "325",
-  "대영광송": "326",
-  "거룩하시도다": "327",
-  "신앙의 신비여": "373",
-  "주님의 기도": "387",
-  "주님께 나라와…": "389",
-  "하느님의 어린양": "328",
-  "보편 지향 기도": "370",
+  "자비송": "380",
+  "대영광송": "381",
+  "거룩하시도다": "382",
+  "신앙의 신비여": "412",
+  "아멘": "419",
+  "주님의 기도": "430",
+  "주님께 나라와…": "444",
+  "하느님의 어린양": "383",
 };
 
 /** 묵주기도(미사 전 기도)와 같은 성모송 교송 */
@@ -127,18 +173,22 @@ export const MASS_SECTIONS: readonly MassSection[] = [
     steps: [
       {
         id: "pre-mass-announce",
-        title: "미사 전 안내 (58분)",
+        title: "안내",
         roles: ["해설자"],
         liturgy: [
-          { kind: "commentator", text: "찬미예수님!\n거룩한 미사에 방해가 되지 않도록 휴대폰은 무음으로 하시고 알람은 꺼 주시기 바랍니다." },
+          {
+            kind: "commentator",
+            text:
+              "찬미예수님!\n거룩한 미사에 방해가 되지 않도록 휴대폰은 무음으로 하시고 알람은 꺼 주시기 바랍니다.\n삼종기도를 바치겠습니다.",
+          },
         ],
-        note: "2차 헌금이 있을 때: \"오늘은 (OOO)을 위한 2차 헌금이 있겠습니다.\"<br>삼종기도를 바칠 미사: 토요일 저녁 6시, 주일 저녁 6시 미사에서는 미사 전에 \"삼종기도 바치겠습니다.\"",
+        note: "2차 헌금은 위쪽 칩에서 고르면 안내·봉헌 멘트에 들어갑니다.",
       },
       {
         id: "angelus",
-        title: "삼종기도 (미사 전)",
+        title: "삼종기도",
         roles: ["해설자", "신자"],
-        note: "○ 해설자 선창 · ● 신자 응답. 토요일 저녁 6시, 주일 저녁 6시 미사에서 바칩니다.",
+        note: "입당 성가에 앞서 바칩니다. ○ 해설자 · ● 신자. (부활 시기에는 부활 삼종기도)",
         liturgy: [
           { kind: "verse", lead: "주님의 천사가 마리아께 아뢰니", response: "성령으로 잉태하셨나이다." },
           { kind: "hail" },
@@ -152,12 +202,12 @@ export const MASS_SECTIONS: readonly MassSection[] = [
       },
       {
         id: "entrance",
-        title: "입당",
+        title: "입당 성가",
         roles: ["해설자", "성가대"],
         note: "사제와 봉사자들이 제대로 나아가는 동안 입당 노래를 합니다.",
         liturgy: [
-          { kind: "commentator", text: "오늘은 (       ) 주일(대축일)입니다.\n입당성가 ○○번 입니다." },
-          { kind: "hymn-announce", slot: "entrance", template: "입당성가 {num}번 입니다." },
+          { kind: "commentator", text: "오늘은 ○○ 주일(대축일)입니다." },
+          { kind: "hymn-announce", slot: "entrance", template: "입당성가 {num}번입니다." },
         ],
         hymns: [{ kind: "week", slot: "entrance", label: "입당" }],
       },
@@ -165,14 +215,13 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         id: "greeting",
         title: "성호경·인사",
         roles: ["사제", "신자"],
-        response: "사제: 성부와 성자와 성령의 이름으로.\n신자: 아멘.\n사제가 인사하면 신자: 또한 사제의 영과 함께.",
-        note: "사제나 부제, 또는 다른 봉사자(해설자)가 그날 미사의 뜻을 짧게 풀이할 수 있습니다.",
+        response: "사제: 성부와 성자와 성령의 이름으로.\n신자: 아멘.\n사제: 주님께서 여러분과 함께.\n신자: 또한 사제의 영과 함께.",
       },
       {
         id: "penitential",
         title: "참회·자비송",
         roles: ["사제", "신자", "성가대"],
-        note: "주일, 특히 부활 시기 주일에는 참회 예식 대신 성수 예식을 할 수 있습니다.",
+        note: "참회 예식에서 이미 자비송을 바쳤으면 따로 반복하지 않습니다.",
         liturgy: [
           { kind: "prayer", title: "고백기도", role: "모두", text: PRAYERS.고백기도, collapsible: true },
           { kind: "prayer", title: "자비송", role: "모두", text: PRAYERS.자비송, collapsible: false },
@@ -202,15 +251,6 @@ export const MASS_SECTIONS: readonly MassSection[] = [
     title: "말씀 전례",
     steps: [
       {
-        id: "readings-intro",
-        title: "독서 안내",
-        roles: ["해설자"],
-        liturgy: [
-          { kind: "commentator", text: "말씀 전례입니다.\n오늘 독서와 복음은 가톨릭 전례력에서 확인하실 수 있습니다." },
-        ],
-        note: "독서와 복음 본문은 날마다 달라지므로, 이 페이지에서는 싣지 않습니다. <a href=\"https://missa.cbck.or.kr/\" target=\"_blank\" rel=\"noopener\">missa.cbck.or.kr</a>에서 오늘의 독서·복음을 확인하세요.",
-      },
-      {
         id: "first-reading",
         title: "제1독서",
         roles: ["독서자", "신자"],
@@ -219,8 +259,8 @@ export const MASS_SECTIONS: readonly MassSection[] = [
       {
         id: "psalm",
         title: "화답송",
-        roles: ["해설자", "신자"],
-        note: "해설자가 봉독합니다 (토요 6시, 주일 7시, 주일 9시, 주일 저녁 6시).",
+        roles: ["해설자", "선창자", "신자"],
+        note: "시편 담당자나 선창자가 시편을 노래하거나 낭송하고, 신자는 후렴으로 응답합니다. 토요 6시·주일 7시·9시·저녁 6시 미사에서는 해설자가 봉독합니다.",
       },
       {
         id: "second-reading",
@@ -232,8 +272,8 @@ export const MASS_SECTIONS: readonly MassSection[] = [
       {
         id: "gospel-acclamation",
         title: "복음 환호송",
-        roles: ["해설자", "신자"],
-        note: "해설자가 봉독합니다 (토요 6시, 주일 7시, 주일 9시, 주일 저녁 6시).<br><strong>사순 시기:</strong> 알렐루야 없음 (매일미사 책 참조).",
+        roles: ["성가대", "신자"],
+        note: "알렐루야를 합니다. 사순 시기에는 알렐루야 대신 다른 환호를 할 수 있습니다.",
       },
       {
         id: "gospel",
@@ -251,19 +291,16 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         id: "creed",
         title: "신앙 고백",
         roles: ["신자"],
-        note: "신경을 노래하거나 낭송합니다. 특히 사순 시기와 부활 시기에는 사도 신경을 바칠 수 있습니다.",
+        note: "사도 신경을 노래하거나 낭송합니다.",
         liturgy: [
-          { kind: "prayer", title: "니케아-콘스탄티노폴리스 신경", role: "모두", text: PRAYERS.니케아신경, collapsible: true },
-          { kind: "prayer", title: "사도 신경 (사순·부활 시기)", role: "모두", text: PRAYERS.사도신경, collapsible: true },
+          { kind: "prayer", title: "사도 신경", role: "모두", text: PRAYERS.사도신경, collapsible: false },
         ],
       },
       {
         id: "intercessions",
         title: "보편 지향 기도",
         roles: ["해설자", "신자"],
-        response: "해설자: (지향을 읽음) …기도합시다.\n신자: 주님, 저희의 기도를 들어주소서. (성가 370번)",
-        note: "신자들의 기도를 바칩니다. 지향은 그날 준비에 따릅니다.",
-        hymns: [{ kind: "fixed", fixedName: "보편 지향 기도", label: "응답" }],
+        note: "신자들의 기도를 바칩니다. 지향과 응답 가사는 그날 준비에 따릅니다.",
       },
     ],
   },
@@ -277,7 +314,7 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         roles: ["해설자", "성가대", "사제", "신자"],
         note: "신경과 보편 지향 기도가 끝나면 봉헌 노래를 시작합니다.",
         liturgy: [
-          { kind: "hymn-announce", slot: "offertory", template: "봉헌성가 {num}번 입니다." },
+          { kind: "hymn-announce", slot: "offertory", template: "예물 봉헌성가 {num}번입니다." },
         ],
         hymns: [{ kind: "week", slot: "offertory", label: "봉헌" }],
       },
@@ -297,55 +334,34 @@ export const MASS_SECTIONS: readonly MassSection[] = [
       {
         id: "sanctus",
         title: "거룩하시도다",
-        roles: ["성가대", "신자"],
+        roles: ["해설자", "성가대", "신자"],
+        note: "토요 6시·주일 7시·9시·저녁 6시 미사에서 해설자가 선창합니다.",
         liturgy: [
+          { kind: "commentator", text: "거룩하시도다~~" },
           { kind: "prayer", title: "거룩하시도다", role: "모두", text: PRAYERS.거룩하시도다, collapsible: false },
         ],
         hymns: [{ kind: "fixed", fixedName: "거룩하시도다", label: "거룩하시도다" }],
       },
       {
-        id: "epiclesis-consecration",
-        title: "성령 청원 (축성 기원)",
+        id: "eucharistic-prayer",
+        title: "성찬 기도",
         roles: ["사제"],
-        response: "사제: 거룩하신 아버지, 아버지께서는 모든 거룩함의 샘이시옵니다.\n간구하오니 성령의 힘으로 이 예물을 거룩하게 하시어\n우리 주 예수 그리스도의 몸과 피가 되게 하소서.",
-        note: "<span class=\"server-note\">① 복사: 종을 친다</span> (사제가 두 손을 펴서 예물 위로 얹을 때)",
-      },
-      {
-        id: "institution-narrative",
-        title: "성찬 제정과 축성문",
-        roles: ["사제"],
-        note: "<span class=\"server-note\">② 복사: 종을 친다</span> (사제가 성체를 들어 올릴 때)<br><span class=\"server-note\">③ 복사: 종을 친다</span> (사제 절할 때)<br><span class=\"server-note\">④ 복사: 종을 친다</span> (사제가 성작을 들어 올릴 때)<br><span class=\"server-note\">⑤ 복사: 종을 친다</span> (사제 절할 때)",
+        note: "사제가 감사 기도(성찬 기도)를 바칩니다.",
       },
       {
         id: "mystery",
         title: "신앙의 신비여",
         roles: ["사제", "신자", "성가대"],
-        response: "사제: 신앙의 신비여!\n\n<strong>평상시 (1절):</strong>\n신자: 주님께서 오실 때까지 주님의 죽음을 전하며 부활을 선포하나이다.\n\n<strong>사순 시기 (2절):</strong>\n신자: 주님께서 오실 때까지, 이 빵을 먹고 이 잔을 마실 적마다, 주님의 죽음을 전하나이다.\n\n<strong>부활 시기 (3절):</strong>\n신자: 십자가와 부활로 저희를 구원하신 주님, 주님 길이길이 영광 받으소서.",
+        response: "사제: 신앙의 신비여!\n신자: 주님께서 오실 때까지 주님의 죽음을 전하며 부활을 선포하나이다.",
+        note: "통상문에 다른 환호 양식도 있습니다.",
         hymns: [{ kind: "fixed", fixedName: "신앙의 신비여", label: "신앙의 신비여" }],
       },
       {
-        id: "memorial-offering",
-        title: "기념과 봉헌",
-        roles: ["사제"],
-        response: "사제: 아버지, 저희는 그리스도의 죽음과 부활을 기념하며\n생명의 빵과 구원의 잔을 봉헌하나이다.\n또한 저희가 아버지 앞에 나아와 봉사하게 하시니 감사하나이다.",
-      },
-      {
-        id: "epiclesis-unity",
-        title: "성령 청원 (일치 기원)",
-        roles: ["사제"],
-        response: "사제: 간절히 청하오니 저희가 그리스도의 몸과 피를 받아 모시어\n성령으로 모두 한 몸을 이루게 하소서.",
-      },
-      {
-        id: "intercessions-eucharistic",
-        title: "전구",
-        roles: ["사제"],
-        response: "사제: 주님, 온 세상에 널리 퍼져 있는 교회를 생각하시어\n교황 (     )와 저희 주교 (     )와 보좌주교들과\n모든 성직자와 더불어 사랑의 교회를 이루게 하소서.\n…\n저희에게도 자비를 베푸시어 영원으로부터 주님의 사랑을 받는\n하느님의 어머니 복되신 동정 마리아와 그 배필이신 성 요셉과\n복된 사도들과 모든 성인과 함께 영원한 삶을 누리며\n성자 예수 그리스도를 통하여 아버지를 찬양하게 하소서.",
-      },
-      {
         id: "doxology",
-        title: "마침 영광송",
-        roles: ["사제", "신자"],
-        response: "사제: 그리스도를 통하여, 그리스도와 함께, 그리스도 안에서,\n성령으로 하나 되어 전능하신 천주 성부\n모든 영예와 영광을 영원히 받으소서.\n신자: 아멘.",
+        title: "마침 영광송·아멘",
+        roles: ["사제", "신자", "성가대"],
+        response: "신자: 아멘.",
+        hymns: [{ kind: "fixed", fixedName: "아멘", label: "아멘" }],
       },
     ],
   },
@@ -375,13 +391,14 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         title: "평화의 인사",
         roles: ["사제", "신자"],
         response: "사제: 주님의 평화가 항상 여러분과 함께.\n신자: 또한 사제의 영과 함께.\n사제: 평화의 인사를 나누십시오.\n신자: 평화를 빕니다.",
-        note: "<span class=\"server-note\">봉사자 참고:</span> 신부님께서 (신부님 기준 오른쪽) 1복사와 인사 나눌 때, 해설자·독서자 모두 같이 신부님께 인사합니다. 그리고 좌우 신자들과 인사 나눕니다.",
       },
       {
         id: "agnus",
         title: "하느님의 어린양",
-        roles: ["성가대", "신자"],
+        roles: ["해설자", "성가대", "신자"],
+        note: "토요 6시·주일 7시·9시·저녁 6시 미사: 평화의 인사를 나누고 신부님이 성체를 쪼개실 때 해설자가 선창합니다.",
         liturgy: [
+          { kind: "commentator", text: "하느님의 어린양~~" },
           { kind: "prayer", title: "하느님의 어린양", role: "모두", text: PRAYERS.하느님의어린양, collapsible: false },
         ],
         hymns: [{ kind: "fixed", fixedName: "하느님의 어린양", label: "하느님의 어린양" }],
@@ -389,13 +406,13 @@ export const MASS_SECTIONS: readonly MassSection[] = [
       {
         id: "communion",
         title: "영성체·성체 성가",
-        roles: ["사제", "신자", "성가대"],
-        note: "<span class=\"server-note\">⑥ 복사: 종을 친다</span> (사제가 성체를 모실 때)",
+        roles: ["해설자", "사제", "신자", "성가대"],
+        note: "사제가 성체를 모실 때(복사가 종을 칠 때) 영성체 성가를 안내합니다.",
         liturgy: [
           { kind: "prayer", title: "영성체 전 응답", role: "모두", text: PRAYERS.영성체전응답, collapsible: false },
-          { kind: "hymn-announce", slot: "communion", template: "성체성가 {num}번 입니다." },
+          { kind: "hymn-announce", slot: "communion", template: "영성체성가 {num}번입니다." },
         ],
-        response: "사제: 보라, 하느님의 어린양, 세상의 죄를 없애시는 분이시니,\n이 성찬에 초대받은 이는 복되도다.\n신자: 주님, 제 안에 주님을 모시기에 합당치 않사오나\n한 말씀만 하소서. 제 영혼이 곧 나으리이다.\n\n(영성체)\n사제: 그리스도의 몸.\n신자: 아멘.",
+        response: "사제: 보라, 하느님의 어린양, 세상의 죄를 없애시는 분이시니, 이 성찬에 초대받은 이는 복되도다.\n신자: 주님, 제 안에 주님을 모시기에 합당치 않사오나 한 말씀만 하소서. 제 영혼이 곧 나으리이다.\n사제: 그리스도의 몸.\n신자: 아멘.",
         hymns: [{ kind: "week", slot: "communion", label: "성체" }],
       },
       {
@@ -403,7 +420,7 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         title: "영성체 후 기도",
         roles: ["사제", "신자"],
         response: "사제: 기도합시다.\n신자: 아멘.",
-        note: "그전에 잠깐 침묵하며 기도할 수 있습니다.",
+        note: "그전에 잠깐 침묵하며 기도할 수 있습니다. 미사 후 마침기도는 「마침기도」에서 이어서 바칩니다.",
       },
     ],
   },
@@ -436,37 +453,30 @@ export const MASS_SECTIONS: readonly MassSection[] = [
         roles: ["해설자", "성가대"],
         note: "사제와 봉사자들이 제대에 절하고 물러갈 때 부릅니다.",
         liturgy: [
-          { kind: "hymn-announce", slot: "recessional", template: "파견성가 {num}번 입니다." },
-          { kind: "commentator", text: "오늘 미사에 참례해 주신 모든 분께 감사드립니다.\n찬미예수님!" },
+          { kind: "hymn-announce", slot: "recessional", template: "파견성가 {num}번입니다." },
         ],
         hymns: [{ kind: "week", slot: "recessional", label: "파견" }],
       },
+    ],
+  },
+  {
+    id: "closing-prayer",
+    title: "마침기도",
+    steps: [
       {
-        id: "post-mass-angelus",
-        title: "삼종기도 (미사 후)",
-        roles: ["해설자", "신자", "사제"],
-        note: "월요일 6시 미사(X), 토요특전미사(X), 주일 저녁 6시(X), 교중미사(O)에서 바칩니다.<br>영광송·성호경은 교중미사에서만 바칩니다.",
+        id: "closing-prayer-body",
+        title: "마침기도",
+        roles: ["해설자", "신자"],
+        note: "미사 후 마침기도를 이어서 바칩니다. 위쪽에서 WYD·매일미사를 고를 수 있어요.",
         liturgy: [
-          { kind: "verse", lead: "주님의 천사가 마리아께 아뢰니", response: "성령으로 잉태하셨나이다." },
-          { kind: "hail" },
-          { kind: "verse", lead: "\"주님의 종이오니", response: "그대로 제게 이루어지소서!\"" },
-          { kind: "hail" },
-          { kind: "verse", lead: "이에 말씀이 사람이 되시어", response: "저희 가운데 계시나이다." },
-          { kind: "hail" },
-          { kind: "verse", lead: "천주의 성모님, 저희를 위하여 빌어주시어", response: "그리스도께서 약속하신 영원한 생명을 얻게 하소서." },
-          { kind: "collect", lead: PRAYERS.삼종기도마침, response: "아멘." },
-        ],
-      },
-      {
-        id: "post-mass-regina-caeli",
-        title: "부활 삼종기도 (미사 후)",
-        roles: ["해설자", "신자", "사제"],
-        note: "<strong>예수 부활 대축일 ~ 성령 강림 대축일</strong>에 삼종기도 대신 바칩니다.<br>월요일 6시 미사(X), 토요특전미사(X), 주일 저녁 6시(X), 교중미사(O).",
-        liturgy: [
-          { kind: "verse", lead: "하늘의 모후님, 기뻐하소서. 알렐루야.", response: "태중에 모시던 아드님께서, 알렐루야." },
-          { kind: "verse", lead: "말씀하신 대로 부활하셨나이다. 알렐루야.", response: "저희를 위하여 하느님께 빌어주소서. 알렐루야." },
-          { kind: "verse", lead: "동정 마리아님, 기뻐하시며 즐거워하소서. 알렐루야.", response: "주님께서 참으로 부활하셨나이다. 알렐루야." },
-          { kind: "collect", lead: PRAYERS.부활삼종기도마침, response: "아멘." },
+          { kind: "commentator", text: "2027 서울 세계청년대회 공식 기도문을 바치겠습니다." },
+          { kind: "prayer", title: "WYD 공식 기도문", role: "모두", text: PRAYERS.WYD공식기도문, collapsible: false },
+          { kind: "verse", lead: "자비와 평화의 모후이시여,", response: "저희를 위하여 빌어 주소서." },
+          {
+            kind: "verse",
+            lead: "서울 세계청년대회의 주보성인들이여,",
+            response: "모든 젊은이들을 위하여 빌어 주소서.",
+          },
         ],
       },
     ],
@@ -490,6 +500,260 @@ export function formatNumbers(nums: string[] | undefined): string {
   return list.length ? list.join(", ") : "–";
 }
 
+function sectionText(daily: DailyMissa | null | undefined, key: string): string {
+  return (daily?.sections?.[key]?.text || "").trim();
+}
+
+/** 출처·성경 구절만 (본문은 /readings/) */
+function readingCite(daily: DailyMissa, key: string): string {
+  const sec = daily.sections?.[key];
+  if (!sec) return "";
+  return [sec.source, sec.ref || sec.citation].filter(Boolean).join(" · ");
+}
+
+function readingPageNote(cite: string, hash: string): string {
+  const link = `<a href="/readings/#${esc(hash)}">오늘 독서에서 보기</a>`;
+  return cite ? `${esc(cite)} · ${link}` : link;
+}
+
+/** 해설자용 짧은 전례명 (연중 제N주일 우선) */
+export function liturgyAnnounceTitle(daily: DailyMissa | null | undefined): string {
+  if (!daily) return "";
+  if (daily.weekLabel) return daily.weekLabel.replace(/\s+/g, " ").trim();
+  const raw =
+    daily.titlePlain ||
+    daily.title.replace(/^\[[^\]]+\]\s*/, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+  return raw.replace(/\s+/g, " ").trim();
+}
+
+/** 해설자 멘트 한 줄: 「오늘 전례」 문장 우선 */
+export function liturgyTodayLine(daily: DailyMissa | null | undefined): string {
+  if (!daily) return "오늘은 ○○ 주일(대축일)입니다.";
+  if (daily.announce) return daily.announce.replace(/\s+/g, " ").trim();
+  const title = liturgyAnnounceTitle(daily);
+  return title ? `오늘은 ${title}입니다.` : "오늘은 ○○ 주일(대축일)입니다.";
+}
+
+/** 2차 헌금 멘트를 안내·봉헌에 끼워 넣는다. */
+export function applySecondCollection(
+  sections: readonly MassSection[],
+  mass: MassRecord | null | undefined
+): MassSection[] {
+  const purpose = mass?.secondCollection?.trim() || "";
+  const preLine = secondCollectionAnnounce(purpose, "pre");
+  const offLine = secondCollectionAnnounce(purpose, "offertory");
+
+  return sections.map((sec) => ({
+    ...sec,
+    steps: sec.steps.map((step) => {
+      if (step.id === "pre-mass-announce") {
+        const base =
+          "찬미예수님!\n거룩한 미사에 방해가 되지 않도록 휴대폰은 무음으로 하시고 알람은 꺼 주시기 바랍니다.";
+        const text = preLine
+          ? `${base}\n${preLine}\n삼종기도를 바치겠습니다.`
+          : `${base}\n삼종기도를 바치겠습니다.`;
+        return {
+          ...step,
+          liturgy: [{ kind: "commentator", text }],
+        };
+      }
+      if (step.id === "offertory") {
+        const rest = (step.liturgy || []).filter((p) => p.kind !== "commentator");
+        return {
+          ...step,
+          liturgy: offLine
+            ? [{ kind: "commentator", text: offLine }, ...rest]
+            : rest,
+        };
+      }
+      return step;
+    }),
+  }));
+}
+
+/** 매일미사 본문을 해당 단계에 끼워 넣는다. */
+export function applyDailyMissa(
+  sections: readonly MassSection[],
+  daily: DailyMissa | null | undefined
+): MassSection[] {
+  if (!daily) return sections.map((s) => ({ ...s, steps: s.steps.map((st) => ({ ...st })) }));
+
+  const todayLine = liturgyTodayLine(daily);
+
+  return sections.map((sec) => ({
+    ...sec,
+    steps: sec.steps.map((step) => {
+      if (step.id === "entrance") {
+        return {
+          ...step,
+          liturgy: [
+            { kind: "commentator", text: todayLine },
+            ...(step.liturgy || []).filter((p) => p.kind !== "commentator"),
+          ],
+        };
+      }
+
+      if (step.id === "collect") {
+        const text = sectionText(daily, "본기도");
+        if (!text) return step;
+        return {
+          ...step,
+          liturgy: [{ kind: "prayer", title: "본기도", role: "사제", text, collapsible: true }],
+        };
+      }
+
+      // 제1·제2독서·복음 본문은 /readings/ — 화답송·복음 환호송은 미사 도우미에 표시
+      if (step.id === "first-reading") {
+        return { ...step, note: readingPageNote(readingCite(daily, "제1독서"), "reading1") };
+      }
+      if (step.id === "psalm") {
+        const text = sectionText(daily, "화답송");
+        if (!text) return step;
+        const cite = daily.sections["화답송"]?.citation;
+        return {
+          ...step,
+          note: step.note,
+          liturgy: [
+            {
+              kind: "prayer",
+              title: cite ? `화답송 · ${cite}` : "화답송",
+              role: "모두",
+              text,
+              collapsible: false,
+            },
+          ],
+        };
+      }
+      if (step.id === "second-reading") {
+        return { ...step, note: readingPageNote(readingCite(daily, "제2독서"), "reading2") };
+      }
+      if (step.id === "gospel-acclamation") {
+        const text = sectionText(daily, "복음 환호송");
+        if (!text) return step;
+        const cite = daily.sections["복음 환호송"]?.citation;
+        return {
+          ...step,
+          note: step.note,
+          liturgy: [
+            {
+              kind: "prayer",
+              title: cite ? `복음 환호송 · ${cite}` : "복음 환호송",
+              role: "모두",
+              text,
+              collapsible: false,
+            },
+          ],
+        };
+      }
+      if (step.id === "gospel") {
+        return { ...step, note: readingPageNote(readingCite(daily, "복음"), "gospel") };
+      }
+
+      if (step.id === "intercessions") {
+        const text = sectionText(daily, "보편 지향 기도");
+        if (!text) return step;
+        return {
+          ...step,
+          liturgy: [{ kind: "prayer", title: "보편 지향 기도", role: "모두", text, collapsible: true }],
+        };
+      }
+
+      if (step.id === "prayer-over-gifts") {
+        const text = sectionText(daily, "예물 기도");
+        if (!text) return step;
+        return {
+          ...step,
+          liturgy: [{ kind: "prayer", title: "예물 기도", role: "사제", text, collapsible: true }],
+        };
+      }
+
+      if (step.id === "communion") {
+        const antiphon = sectionText(daily, "영성체송");
+        if (!antiphon) return step;
+        const cite = daily.sections["영성체송"]?.citation;
+        const antiphonPart: LiturgyPart = {
+          kind: "prayer",
+          title: cite ? `영성체송 · ${cite}` : "영성체송",
+          role: "모두",
+          text: antiphon,
+          collapsible: true,
+        };
+        // 영성체 전 응답 → 영성체송 → 성가 안내
+        const liturgy = [...(step.liturgy || [])];
+        const hymnIdx = liturgy.findIndex((p) => p.kind === "hymn-announce");
+        if (hymnIdx >= 0) liturgy.splice(hymnIdx, 0, antiphonPart);
+        else liturgy.push(antiphonPart);
+        return { ...step, liturgy };
+      }
+
+      return step;
+    }),
+  }));
+}
+
+/** 마침기도: WYD 공식 / 매일미사(쪽수) 전환 */
+export function applyClosingPrayer(
+  sections: readonly MassSection[],
+  opts: {
+    mode: ClosingPrayerMode;
+    page: string;
+    daily?: DailyMissa | null;
+  }
+): MassSection[] {
+  const mode = normalizeClosingPrayerMode(opts.mode);
+  const page = normalizeMissaPage(opts.page);
+  const titleForAnnounce = liturgyAnnounceTitle(opts.daily);
+  const sourceUrl = opts.daily?.sourceUrl || "https://missa.cbck.or.kr/";
+
+  return sections.map((sec) => {
+    if (sec.id !== "closing-prayer") return sec;
+    return {
+      ...sec,
+      steps: sec.steps.map((step) => {
+        if (step.id !== "closing-prayer-body") return step;
+        if (mode === "daily") {
+          const pageLabel = page || "○";
+          const titleBit = titleForAnnounce ? `「${titleForAnnounce}」 ` : "";
+          return {
+            ...step,
+            title: "매일미사 기도",
+            note: page
+              ? `인쇄본 ${esc(page)}쪽 · <a href="${esc(sourceUrl)}" target="_blank" rel="noopener">missa.cbck.or.kr</a>（쪽수는 인쇄본 기준, 웹에는 없어요）`
+              : `쪽수를 위쪽에서 입력하세요 · <a href="${esc(sourceUrl)}" target="_blank" rel="noopener">missa.cbck.or.kr</a>`,
+            liturgy: [
+              {
+                kind: "commentator",
+                text: `매일미사 ${titleBit}${pageLabel}쪽 기도를 바치겠습니다.`,
+              },
+            ],
+          };
+        }
+        return {
+          ...step,
+          title: "WYD 공식 기도문",
+          note: `출처: <a href="https://wyd.catholic.or.kr/prayer.asp" target="_blank" rel="noopener">2027 서울 WYD 공식 기도문</a>`,
+          liturgy: [
+            { kind: "commentator", text: "2027 서울 세계청년대회 공식 기도문을 바치겠습니다." },
+            {
+              kind: "prayer",
+              title: "WYD 공식 기도문",
+              role: "모두",
+              text: PRAYERS.WYD공식기도문,
+              collapsible: false,
+            },
+            { kind: "verse", lead: "자비와 평화의 모후이시여,", response: "저희를 위하여 빌어 주소서." },
+            {
+              kind: "verse",
+              lead: "서울 세계청년대회의 주보성인들이여,",
+              response: "모든 젊은이들을 위하여 빌어 주소서.",
+            },
+          ],
+        };
+      }),
+    };
+  });
+}
+
 function rolesHTML(roles: Role[]): string {
   return roles.map((r) => `<span class="role">${esc(r)}</span>`).join("");
 }
@@ -503,6 +767,31 @@ function hymnsHTML(bindings: HymnBinding[] | undefined, mass: MassRecord | null,
     const empty = nums === "–" ? " empty" : "";
     return `<div class="hymn"><span class="hymn-label">${esc(b.label)}</span><span class="hymn-num${empty}">${esc(nums)}</span></div>`;
   }).join("")}</div>`;
+}
+
+/** 큰 성가 번호 + 「입당성가 ○번입니다」만 (주일 멘트와 분리) */
+function hymnHeroHTML(step: MassStep, mass: MassRecord | null): string {
+  const announce = (step.liturgy || []).find(
+    (p): p is Extract<LiturgyPart, { kind: "hymn-announce" }> => p.kind === "hymn-announce"
+  );
+  const week = (step.hymns || []).find((h) => h.kind === "week" && h.slot);
+  if (!announce || !week?.slot) return "";
+
+  const nums = formatNumbers(mass?.[week.slot]);
+  const hasNum = nums !== "–";
+  const say = announce.template.replace("{num}", hasNum ? nums : "○○");
+
+  return `<div class="hymn-hero${hasNum ? "" : " empty"}">
+    <div class="hymn-hero-num">${esc(hasNum ? nums : "○○")}</div>
+    <div class="hymn-hero-say">${esc(say)}</div>
+  </div>`;
+}
+
+function liturgyWithoutHymnHero(parts: LiturgyPart[] | undefined, mass: MassRecord | null): string {
+  if (!parts?.length) return "";
+  // 성가 안내만 hero로 빼고, 「오늘은 ○○입니다」 등 해설자 멘트는 그대로
+  const filtered = parts.filter((p) => p.kind !== "hymn-announce");
+  return liturgyHTML(filtered.length ? filtered : undefined, mass);
 }
 
 function roleBlock(role: "commentator" | "faithful", label: string, text: string): string {
@@ -572,13 +861,25 @@ function stepHTML(step: MassStep, mass: MassRecord | null, fixed: FixedHymn[]): 
     : "";
   const noteText = step.note || "";
   const note = noteText ? `<p class="note">${noteText}</p>` : "";
-  const body = `
-    ${liturgyHTML(step.liturgy, mass)}
-    ${hymnsHTML(step.hymns, mass, fixed)}
-    ${resp}
-    ${note}`;
 
-  if (step.liturgy?.length) {
+  const hero = hymnHeroHTML(step, mass);
+  const liturgy = hero
+    ? liturgyWithoutHymnHero(step.liturgy, mass)
+    : liturgyHTML(step.liturgy, mass);
+  // hero에 주일 성가를 넣었으면 작은 번호 카드는 생략 (고정곡은 그대로)
+  const weekInHero = !!hero;
+  const hymnBindings = weekInHero
+    ? (step.hymns || []).filter((h) => h.kind !== "week")
+    : step.hymns;
+  const hymns = hymnsHTML(hymnBindings, mass, fixed);
+
+  // 영성체: 사제·신자 대화 → 영성체 전 응답 → 영성체송·성가
+  const body =
+    step.id === "communion"
+      ? `${resp}${liturgy}${hero}${hymns}${note}`
+      : `${liturgy}${hero}${hymns}${resp}${note}`;
+
+  if (step.liturgy?.length || hero) {
     return `<details class="step step-fold" id="step-${esc(step.id)}" open>
       <summary class="step-head">
         <h3>${esc(step.title)}</h3>
@@ -597,40 +898,155 @@ function stepHTML(step: MassStep, mass: MassRecord | null, fixed: FixedHymn[]): 
   </article>`;
 }
 
+function secondCollectionChipsHTML(selected: string | null): string {
+  const value = selected || "";
+  const custom = value && !isPresetSecondCollection(value);
+  const chips = [
+    `<button type="button" class="chip${value === "" ? " is-on" : ""}" data-purpose="">없음</button>`,
+    ...SECOND_COLLECTION_PURPOSES.map(
+      (p) =>
+        `<button type="button" class="chip${value === p ? " is-on" : ""}" data-purpose="${esc(p)}">${esc(p)}</button>`
+    ),
+    `<button type="button" class="chip${custom ? " is-on" : ""}" data-purpose="__custom__">직접 입력</button>`,
+  ];
+  return `<div class="sc-picker">
+    <div class="sc-picker-label">2차 헌금</div>
+    <div class="chips" id="secondCollectionChips" role="group" aria-label="2차 헌금 목적">${chips.join("")}</div>
+    <div class="sc-custom${custom ? "" : " is-hidden"}" id="scCustomWrap">
+      <input type="text" id="scCustomInput" maxlength="${SECOND_COLLECTION_MAX_LEN}"
+        placeholder="목적 직접 입력 (예: 성서 주간)"
+        value="${esc(custom ? value : "")}"
+        autocomplete="off" enterkeyhint="done">
+      <button type="button" class="sc-custom-apply" id="scCustomApply">적용</button>
+    </div>
+  </div>`;
+}
+
+function closingPrayerPickerHTML(mode: ClosingPrayerMode, page: string): string {
+  const m = normalizeClosingPrayerMode(mode);
+  const p = normalizeMissaPage(page);
+  return `<div class="sc-picker" id="closingPrayerPicker">
+    <div class="sc-picker-label">마침기도</div>
+    <div class="chips" id="closingPrayerChips" role="group" aria-label="마침기도 종류">
+      <button type="button" class="chip${m === "wyd" ? " is-on" : ""}" data-closing="wyd">WYD 공식</button>
+      <button type="button" class="chip${m === "daily" ? " is-on" : ""}" data-closing="daily">매일미사</button>
+    </div>
+    <div class="sc-custom${m === "daily" ? "" : " is-hidden"}" id="missaPageWrap">
+      <input type="text" id="missaPageInput" inputmode="numeric" maxlength="4"
+        placeholder="매일미사 쪽수 (예: 128)"
+        value="${esc(p)}"
+        autocomplete="off" enterkeyhint="done">
+      <button type="button" class="sc-custom-apply" id="missaPageApply">적용</button>
+    </div>
+    <p class="sc-hint${m === "daily" ? "" : " is-hidden"}" id="missaPageHint">인쇄본 쪽수는 웹에 없어서, 갖고 계신 『매일미사』를 보고 입력해 주세요.</p>
+  </div>`;
+}
+
 export function renderOrder(opts: {
   mass: MassRecord | null;
   fixed: FixedHymn[];
   today: string;
   sunday: string;
+  daily?: DailyMissa | null;
+  dailyError?: boolean;
   loadError?: boolean;
+  secondCollection?: string | null;
+  viewMode?: "tabs" | "all";
+  closingMode?: ClosingPrayerMode;
+  missaPage?: string;
 }): string {
-  const { mass, fixed, today, sunday, loadError } = opts;
+  const { mass, fixed, today, sunday, daily, dailyError, loadError } = opts;
+  const viewMode = opts.viewMode === "all" ? "all" : "tabs";
+  const secondCollection = normalizeSecondCollection(opts.secondCollection) ?? null;
+  const closingMode = normalizeClosingPrayerMode(opts.closingMode);
+  const missaPage = normalizeMissaPage(opts.missaPage);
   const dateLine = sundayChipText(today, sunday);
   const songLine = massSongChipText(mass, today, !!loadError);
+  const massForLiturgy: MassRecord | null = mass
+    ? { ...mass, secondCollection }
+    : secondCollection
+      ? {
+          id: "",
+          date: sunday,
+          entrance: [],
+          offertory: [],
+          communion: [],
+          recessional: [],
+          secondCollection,
+        }
+      : null;
+  const order = applyClosingPrayer(
+    applySecondCollection(applyDailyMissa(MASS_SECTIONS, daily), massForLiturgy),
+    { mode: closingMode, page: missaPage, daily }
+  );
 
-  const tabButtons = MASS_SECTIONS.map((sec, idx) => {
-    const selected = idx === 0 ? ' aria-selected="true"' : ' aria-selected="false"';
-    return `<button type="button" role="tab" id="tab-${esc(sec.id)}" data-tab="${esc(sec.id)}"${selected}>${esc(sec.title)}</button>`;
-  }).join("");
+  const tabButtons = order
+    .flatMap((sec, idx) => {
+      const selected = idx === 0 ? ' aria-selected="true"' : ' aria-selected="false"';
+      const btn = `<button type="button" role="tab" id="tab-${esc(sec.id)}" data-tab="${esc(sec.id)}"${selected}>${esc(sec.title)}</button>`;
+      if (sec.id !== "word") return [btn];
+      const links = MASS_READING_LINKS.map(
+        (l) =>
+          `<a class="mass-tab-link" href="${esc(l.href)}">${esc(l.label)}</a>`
+      );
+      return [btn, ...links];
+    })
+    .join("");
 
-  const tabPanels = MASS_SECTIONS.map((sec, idx) => {
+  const tabPanels = order.map((sec, idx) => {
     const body = sec.steps.map((st) => stepHTML(st, mass, fixed)).join("");
-    const hidden = idx === 0 ? "" : ' hidden';
+    const hidden = viewMode === "all" || idx === 0 ? "" : ' hidden';
+    const next = order[idx + 1];
+    const nav =
+      viewMode === "all"
+        ? ""
+        : next
+          ? `<div class="sec-nav">
+          <button type="button" class="mass-next" data-goto="${esc(next.id)}">다음 · ${esc(next.title)}</button>
+        </div>`
+          : `<div class="sec-nav">
+          <button type="button" class="mass-next mass-next-end" data-goto="${esc(order[0].id)}">처음으로</button>
+        </div>`;
+    const secTitle =
+      viewMode === "all" ? `<h2 class="sec-title">${esc(sec.title)}</h2>` : "";
     return `<div class="tab-panel" id="panel-${esc(sec.id)}" role="tabpanel" data-panel="${esc(sec.id)}"${hidden}>
+      ${secTitle}
       <div class="sec-body">${body}</div>
+      ${nav}
     </div>`;
   }).join("");
+
+  const weekOrTitle = daily?.weekLabel || liturgyAnnounceTitle(daily);
+  const litChip = daily && weekOrTitle
+    ? `<div class="liturgy-chip">${esc(daily.color ? `[${daily.color}] ${weekOrTitle}` : weekOrTitle)}</div>`
+    : dailyError
+      ? `<div class="liturgy-chip muted">매일미사를 불러오지 못했어요</div>`
+      : "";
+
+  const sourceDaily = daily?.sourceUrl
+    ? `<a href="${esc(daily.sourceUrl)}" target="_blank" rel="noopener">missa.cbck.or.kr</a>`
+    : `<a href="https://missa.cbck.or.kr/" target="_blank" rel="noopener">missa.cbck.or.kr</a>`;
+
+  const viewToggle = `<div class="view-toggle" role="group" aria-label="보기 방식">
+    <button type="button" class="view-btn${viewMode === "tabs" ? " is-on" : ""}" data-view="tabs">구간 보기</button>
+    <button type="button" class="view-btn${viewMode === "all" ? " is-on" : ""}" data-view="all">한번에 보기</button>
+  </div>`;
 
   return `<header>
     <div class="cross">✝</div>
     <h1>주일 청년미사 순서</h1>
     <p>해설자·전례부·성가대를 위한 주일 미사 안내</p>
     <div class="date-chip">${esc(dateLine)}</div>
+    ${litChip}
     <div class="song-chip${mass ? "" : " muted"}">${esc(songLine)}</div>
+    <a class="readings-chip" href="/readings/">📖 오늘 독서 보기</a>
   </header>
-  <div class="mass-tabs" role="tablist" aria-label="미사 순서">${tabButtons}</div>
-  <div class="order">${tabPanels}</div>
-  <p class="source">순서와 기도문은 한국천주교주교회의 『미사 통상문』(<a href="https://missale.cbck.or.kr/OrdoMissae" target="_blank" rel="noopener">missale.cbck.or.kr</a>)을 따랐습니다.<br>그날의 독서와 복음은 <a href="https://missa.cbck.or.kr/" target="_blank" rel="noopener">missa.cbck.or.kr</a>에서 확인하세요.</p>`;
+  ${secondCollectionChipsHTML(secondCollection)}
+  ${closingPrayerPickerHTML(closingMode, missaPage)}
+  ${viewToggle}
+  <div class="mass-tabs${viewMode === "all" ? " is-all" : ""}" role="tablist" aria-label="미사 순서">${tabButtons}</div>
+  <div class="order${viewMode === "all" ? " view-all" : ""}">${tabPanels}</div>
+  <p class="source">순서와 기도문은 한국천주교주교회의 『미사 통상문』(<a href="https://missale.cbck.or.kr/OrdoMissae" target="_blank" rel="noopener">missale.cbck.or.kr</a>)을 따랐습니다.<br>그날의 독서·기도는 ${sourceDaily} 매일미사에서 불러왔습니다.</p>`;
 }
 
 async function loadData(): Promise<{ data?: ApiData; error?: boolean }> {
@@ -644,32 +1060,150 @@ async function loadData(): Promise<{ data?: ApiData; error?: boolean }> {
   }
 }
 
-function initMassTabs(): void {
-  const tablist = document.querySelector(".mass-tabs");
+async function loadDailyMissa(date: string): Promise<{ daily?: DailyMissa; error?: boolean }> {
+  try {
+    const r = await fetch(`/api/daily-missa?date=${encodeURIComponent(date)}`);
+    if (!r.ok) throw new Error(String(r.status));
+    const daily = (await r.json()) as DailyMissa;
+    if (!daily?.title && !daily?.sections) throw new Error("empty");
+    return { daily };
+  } catch {
+    return { error: true };
+  }
+}
+
+function scStorageKey(date: string): string {
+  return `ym_secondCollection_${date}`;
+}
+
+function readLocalSecondCollection(date: string): string | null {
+  try {
+    return normalizeSecondCollection(localStorage.getItem(scStorageKey(date)));
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalSecondCollection(date: string, purpose: string | null): void {
+  try {
+    const key = scStorageKey(date);
+    if (purpose) localStorage.setItem(key, purpose);
+    else localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+const CLOSING_MODE_KEY = "ym_closing_prayer";
+
+function missaPageStorageKey(date: string): string {
+  return `ym_missa_page_${date}`;
+}
+
+function readClosingPrayerMode(): ClosingPrayerMode {
+  try {
+    return normalizeClosingPrayerMode(localStorage.getItem(CLOSING_MODE_KEY));
+  } catch {
+    return "wyd";
+  }
+}
+
+function writeClosingPrayerMode(mode: ClosingPrayerMode): void {
+  try {
+    localStorage.setItem(CLOSING_MODE_KEY, mode);
+  } catch {
+    /* ignore */
+  }
+}
+
+function readMissaPage(date: string): string {
+  try {
+    return normalizeMissaPage(localStorage.getItem(missaPageStorageKey(date)));
+  } catch {
+    return "";
+  }
+}
+
+function writeMissaPage(date: string, page: string): void {
+  try {
+    const key = missaPageStorageKey(date);
+    const next = normalizeMissaPage(page);
+    if (next) localStorage.setItem(key, next);
+    else localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+function initMassTabs(root: ParentNode = document, viewMode: "tabs" | "all" = "tabs"): void {
+  const tablist = root.querySelector(".mass-tabs");
   if (!tablist) return;
   const tabs = tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-  const panels = document.querySelectorAll<HTMLElement>(".tab-panel");
+  const panels = root.querySelectorAll<HTMLElement>(".tab-panel");
 
   function selectTab(tabId: string): void {
+    if (viewMode === "all") {
+      const panel = root.querySelector<HTMLElement>(`#panel-${CSS.escape(tabId)}`);
+      panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === tabId;
+        t.setAttribute("aria-selected", String(on));
+        if (on) t.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      });
+      return;
+    }
     tabs.forEach((t) => {
       const isSelected = t.dataset.tab === tabId;
       t.setAttribute("aria-selected", String(isSelected));
+      if (isSelected) t.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
     });
     panels.forEach((p) => {
-      const isActive = p.dataset.panel === tabId;
-      p.hidden = !isActive;
+      p.hidden = p.dataset.panel !== tabId;
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       const tabId = tab.dataset.tab;
-      if (tabId) {
-        selectTab(tabId);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      if (tabId) selectTab(tabId);
     });
   });
+
+  root.querySelectorAll<HTMLButtonElement>(".mass-next[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tabId = btn.dataset.goto;
+      if (tabId) selectTab(tabId);
+    });
+  });
+}
+
+async function saveSecondCollectionToMass(
+  mass: MassRecord | null,
+  purpose: string | null
+): Promise<MassRecord | null> {
+  if (!mass?.id) return mass ? { ...mass, secondCollection: purpose } : null;
+  const body = {
+    date: mass.date,
+    memo: mass.memo || "",
+    entrance: mass.entrance || [],
+    offertory: mass.offertory || [],
+    communion: mass.communion || [],
+    recessional: mass.recessional || [],
+    secondCollection: purpose,
+  };
+  try {
+    const r = await fetch(`/api/masses/${encodeURIComponent(mass.id)}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(String(r.status));
+    const data = (await r.json()) as { mass?: MassRecord };
+    return data.mass || { ...mass, secondCollection: purpose };
+  } catch {
+    return { ...mass, secondCollection: purpose };
+  }
 }
 
 export async function mount(root: HTMLElement): Promise<void> {
@@ -688,11 +1222,127 @@ export async function mount(root: HTMLElement): Promise<void> {
   const main = document.getElementById("mass-root");
   if (!main) return;
   const { data, error } = await loadData();
-  const masses = data?.masses ?? [];
+  let mass = currentMass(data?.masses ?? [], today);
   const fixed = data?.fixed ?? [];
-  const mass = currentMass(masses, today);
-  main.innerHTML = renderOrder({ mass, fixed, today, sunday, loadError: !!error });
-  initMassTabs();
+  // 주일 청년미사 전례명·독서는 다가오는(또는 오늘) 주일 기준
+  const { daily = null, error: dailyError } = await loadDailyMissa(sunday);
+
+  const scDate = mass?.date || sunday;
+  let secondCollection =
+    normalizeSecondCollection(mass?.secondCollection) ?? readLocalSecondCollection(scDate);
+  let viewMode: "tabs" | "all" =
+    localStorage.getItem("ym_mass_view") === "all" ? "all" : "tabs";
+  let closingMode = readClosingPrayerMode();
+  let missaPage = readMissaPage(sunday);
+
+  function paint(activeTab?: string | null): void {
+    main!.innerHTML = renderOrder({
+      mass,
+      fixed,
+      today,
+      sunday,
+      daily,
+      dailyError,
+      loadError: !!error,
+      secondCollection,
+      viewMode,
+      closingMode,
+      missaPage,
+    });
+    initMassTabs(main!, viewMode);
+    if (activeTab && viewMode === "tabs") {
+      main!.querySelectorAll<HTMLButtonElement>('[role="tab"]').forEach((t) => {
+        t.setAttribute("aria-selected", String(t.dataset.tab === activeTab));
+      });
+      main!.querySelectorAll<HTMLElement>(".tab-panel").forEach((p) => {
+        p.hidden = p.dataset.panel !== activeTab;
+      });
+    }
+    const currentTab = () =>
+      main!.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.dataset.tab || null;
+
+    async function applySecondCollection(next: string | null): Promise<void> {
+      const tab = currentTab();
+      secondCollection = next;
+      writeLocalSecondCollection(scDate, next);
+      mass = await saveSecondCollectionToMass(mass, next);
+      paint(tab);
+    }
+
+    main!.querySelectorAll<HTMLButtonElement>(".view-btn[data-view]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const next = btn.dataset.view === "all" ? "all" : "tabs";
+        if (next === viewMode) return;
+        viewMode = next;
+        try {
+          localStorage.setItem("ym_mass_view", viewMode);
+        } catch {
+          /* ignore */
+        }
+        paint(currentTab());
+      });
+    });
+
+    const chips = main!.querySelector("#secondCollectionChips");
+    const customWrap = main!.querySelector<HTMLElement>("#scCustomWrap");
+    const customInput = main!.querySelector<HTMLInputElement>("#scCustomInput");
+    const customApply = main!.querySelector<HTMLButtonElement>("#scCustomApply");
+
+    chips?.addEventListener("click", (e) => {
+      const chip = (e.target as HTMLElement | null)?.closest?.(".chip") as HTMLElement | null;
+      if (!chip || !chips.contains(chip)) return;
+      const purpose = chip.dataset.purpose || "";
+      if (purpose === "__custom__") {
+        customWrap?.classList.remove("is-hidden");
+        chips.querySelectorAll<HTMLElement>(".chip").forEach((c) => {
+          c.classList.toggle("is-on", c.dataset.purpose === "__custom__");
+        });
+        customInput?.focus();
+        return;
+      }
+      void applySecondCollection(normalizeSecondCollection(purpose));
+    });
+
+    const commitCustom = () => {
+      const next = normalizeSecondCollection(customInput?.value || "");
+      void applySecondCollection(next);
+    };
+    customApply?.addEventListener("click", commitCustom);
+    customInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitCustom();
+      }
+    });
+
+    const closingChips = main!.querySelector("#closingPrayerChips");
+    closingChips?.addEventListener("click", (e) => {
+      const chip = (e.target as HTMLElement | null)?.closest?.(".chip") as HTMLElement | null;
+      if (!chip || !closingChips.contains(chip)) return;
+      const next = normalizeClosingPrayerMode(chip.dataset.closing);
+      if (next === closingMode) return;
+      closingMode = next;
+      writeClosingPrayerMode(next);
+      paint(currentTab());
+    });
+
+    const pageInput = main!.querySelector<HTMLInputElement>("#missaPageInput");
+    const pageApply = main!.querySelector<HTMLButtonElement>("#missaPageApply");
+    const commitPage = () => {
+      missaPage = normalizeMissaPage(pageInput?.value || "");
+      writeMissaPage(sunday, missaPage);
+      paint(currentTab());
+    };
+    pageApply?.addEventListener("click", commitPage);
+    pageInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        commitPage();
+      }
+    });
+  }
+
+  paint();
 }
 
 function boot(): void {

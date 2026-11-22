@@ -1,6 +1,6 @@
 /** 성가·날짜·사이트 네비 — 전 페이지 공통 */
 
-export type SitePage = "home" | "songs" | "mass" | "rosary";
+export type SitePage = "home" | "songs" | "mass" | "readings" | "rosary";
 
 export const HYMN_FIELDS = [
   ["entrance", "입당"],
@@ -15,6 +15,7 @@ const SITE_LINKS: { id: SitePage; href: string; label: string; short: string }[]
   { id: "home", href: "/", label: "← 메인", short: "← 메인" },
   { id: "songs", href: "/songs/", label: "🎶 이번 주 성가", short: "🎶 성가" },
   { id: "mass", href: "/mass/", label: "🕊️ 미사 순서", short: "🕊️ 미사 순서" },
+  { id: "readings", href: "/readings/", label: "📖 오늘 독서", short: "📖 독서" },
   { id: "rosary", href: "/rosary/", label: "📿 묵주기도", short: "📿 묵주기도" },
 ];
 
@@ -110,9 +111,58 @@ type MassSongs = {
   offertory?: string[];
   communion?: string[];
   recessional?: string[];
+  secondCollection?: string | null;
   date: string;
   id?: string;
 };
+
+/** 2차 헌금 목적 프리셋 (직접 입력도 가능) */
+export const SECOND_COLLECTION_PURPOSES = [
+  "성전 건축",
+  "이웃돕기",
+  "선교",
+  "사회복지",
+  "재해 구호",
+  "청년부",
+  "본당 행사",
+] as const;
+
+export type SecondCollectionPurpose = (typeof SECOND_COLLECTION_PURPOSES)[number];
+
+export const SECOND_COLLECTION_MAX_LEN = 40;
+
+export function eulReul(word: string): string {
+  const ch = word.trim().slice(-1);
+  if (!ch) return "을";
+  const code = ch.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return "을";
+  return (code - 0xac00) % 28 === 0 ? "를" : "을";
+}
+
+export function normalizeSecondCollection(v: unknown): string | null {
+  const s = String(v ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, SECOND_COLLECTION_MAX_LEN);
+  if (!s) return null;
+  return s;
+}
+
+export function isPresetSecondCollection(v: string | null | undefined): boolean {
+  const s = String(v || "").trim();
+  return (SECOND_COLLECTION_PURPOSES as readonly string[]).includes(s);
+}
+
+export function secondCollectionAnnounce(
+  purpose: string | null | undefined,
+  when: "pre" | "offertory"
+): string {
+  const p = String(purpose || "").trim();
+  if (!p) return "";
+  const particle = eulReul(p);
+  if (when === "pre") return `오늘은 ${p}${particle} 위한 2차 헌금이 있겠습니다.`;
+  return `오늘은 ${p}${particle} 위한 2차 헌금이 있습니다.`;
+}
 
 export function songRowsHTML(m: MassSongs): string {
   return HYMN_FIELDS.map(([k, n]) => {

@@ -1,3 +1,28 @@
-# Local Netlify folder
-.netlify
-node_modules
+# Dependencies & local Netlify
+node_modules/
+.netlify/
+.venv-hwp/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs & caches
+*.log
+npm-debug.log*
+.cache/
+
+# Accidental tool lockfiles (this project uses npm)
+deno.lock
+yarn.lock
+pnpm-lock.yaml
+bun.lockb

@@ -14,10 +14,18 @@
   header .cross{color:var(--gold);font-size:22px;letter-spacing:4px}
   header h1{margin:6px 0 4px;font-size:24px;color:var(--navy);font-weight:800;letter-spacing:-.5px}
   header p{margin:0;color:var(--muted);font-size:14px}
-  .date-chip,.song-chip{display:inline-block;margin-top:10px;background:var(--gold-soft);color:var(--navy);
+  .date-chip,.song-chip,.liturgy-chip,.readings-chip{display:inline-block;margin-top:10px;background:var(--gold-soft);color:var(--navy);
     border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700}
-  .song-chip{display:block;width:fit-content;margin:8px auto 0;background:var(--card);border:1px solid var(--line);font-weight:600}
-  .song-chip.muted{color:var(--muted);font-weight:500}
+  .song-chip,.liturgy-chip{display:block;width:fit-content;margin:8px auto 0;background:var(--card);border:1px solid var(--line);font-weight:600}
+  .readings-chip{
+    display:block;width:fit-content;margin:10px auto 0;text-decoration:none;
+    background:var(--navy);color:#fff;border:1px solid var(--navy)
+  }
+  .liturgy-chip{
+    max-width:100%;box-sizing:border-box;padding-left:16px;padding-right:16px;
+    line-height:1.45;text-align:center;border-radius:14px;overflow-wrap:anywhere
+  }
+  .song-chip.muted,.liturgy-chip.muted{color:var(--muted);font-weight:500}
   .loading{text-align:center;color:var(--muted);padding:40px 0}
   .order{margin-top:8px}
   .tab-panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
@@ -50,6 +58,51 @@
   .hymn-num{display:block;font-size:30px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;
     letter-spacing:-.5px;line-height:1.15}
   .hymn-num.empty{color:#c8bfae;font-size:22px;font-weight:700}
+
+  /* 큰 성가 번호 (입당성가 ○번입니다) */
+  .hymn-hero{
+    margin:10px 0 4px;padding:16px 16px 18px;text-align:center;
+    background:var(--commentator-soft);border:2px solid var(--commentator);border-radius:18px
+  }
+  .hymn-hero-num{
+    font-size:56px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;
+    letter-spacing:-1px;line-height:1.05;margin:4px 0 8px
+  }
+  .hymn-hero.empty .hymn-hero-num{color:#a8b89e;font-size:42px}
+  .hymn-hero-say{
+    font-size:18px;font-weight:800;color:var(--commentator);line-height:1.4
+  }
+
+  .sec-nav{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
+  .mass-next{
+    width:100%;font:inherit;font-weight:800;font-size:15px;
+    padding:14px 16px;border-radius:14px;border:2px solid var(--navy);
+    background:var(--navy);color:#fff;cursor:pointer
+  }
+  .mass-next-end{background:var(--card);color:var(--navy)}
+  .mass-next:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  .sc-picker{margin:12px 0 4px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+  .sc-picker-label{font-size:13px;font-weight:800;color:var(--muted);margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    font:inherit;font-size:13px;font-weight:700;padding:8px 12px;border-radius:999px;
+    border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer
+  }
+  .chip.is-on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .sc-custom{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .sc-custom.is-hidden{display:none}
+  .sc-custom input{
+    flex:1;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:12px;background:#fff;color:var(--ink);min-width:0
+  }
+  .sc-custom input:focus{outline:2px solid var(--gold);outline-offset:0;border-color:var(--gold)}
+  .sc-hint{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+  .sc-hint.is-hidden{display:none}
+  .sc-custom-apply{
+    flex:0 0 auto;font:inherit;font-weight:800;font-size:14px;padding:10px 14px;
+    border-radius:12px;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer
+  }
   .resp{margin:8px 0 0;padding:10px 12px;background:var(--bg);border-radius:12px;
     font-size:14px;color:var(--navy);white-space:normal;line-height:1.6}
   .note{margin:8px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
@@ -118,31 +171,49 @@
   .source a{color:var(--gold);text-decoration:underline}
   footer{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
 
-  /* 봉사자 메모 (복사 종 등) */
-  .server-note{
-    display:inline-block;font-size:12px;font-weight:600;color:#8b6914;
-    background:#fdf6e3;border:1px dashed #d4a017;border-radius:6px;
-    padding:2px 8px;margin:2px 0
+  .view-toggle{
+    display:flex;gap:6px;margin:10px 0 0;justify-content:center
   }
-  .note .server-note{display:block;margin-top:4px}
+  .view-btn{
+    font:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;
+    border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer
+  }
+  .view-btn.is-on{background:var(--navy);border-color:var(--navy);color:#fff}
+  .order.view-all{display:flex;flex-direction:column;gap:16px}
+  .order.view-all .tab-panel{
+    display:block !important;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r);box-shadow:0 2px 10px rgba(47,58,86,.05);overflow:hidden
+  }
+  .sec-title{
+    margin:0;padding:14px 16px 0;font-size:15px;font-weight:800;color:var(--gold);
+    letter-spacing:.02em
+  }
+  .mass-tabs.is-all{margin-bottom:4px}
 
-  /* 미사 탭 UI */
+  /* 미사 탭 UI — 가로 스크롤 */
   .mass-tabs{
-    display:flex;gap:6px;padding:12px 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-    scrollbar-width:none;scroll-snap-type:x mandatory
+    display:flex;flex-wrap:nowrap;gap:6px;padding:12px 2px 10px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x proximity;scroll-padding-inline:8px;
+    scrollbar-width:thin
   }
-  .mass-tabs::-webkit-scrollbar{display:none}
-  .mass-tabs button{
+  .mass-tabs::-webkit-scrollbar{height:4px}
+  .mass-tabs::-webkit-scrollbar-thumb{background:rgba(47,58,86,.25);border-radius:999px}
+  .mass-tabs button,.mass-tabs .mass-tab-link{
     flex:0 0 auto;scroll-snap-align:start;
     font:inherit;font-weight:700;font-size:13px;
     padding:10px 14px;border-radius:12px;border:1px solid var(--line);
     background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;
-    transition:background .15s, color .15s, border-color .15s
+    transition:background .15s, color .15s, border-color .15s;
+    text-decoration:none;display:inline-flex;align-items:center
   }
   .mass-tabs button[aria-selected="true"]{
     background:var(--navy);color:#fff;border-color:var(--navy)
   }
-  .mass-tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .mass-tabs .mass-tab-link{
+    border-style:dashed;color:var(--navy);background:var(--gold-soft);border-color:rgba(176,141,74,.45)
+  }
+  .mass-tabs button:focus-visible,.mass-tabs .mass-tab-link:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .tab-panel{animation:tabFadeIn .2s ease}
   .tab-panel[hidden]{display:none}
   @keyframes tabFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -150,6 +221,7 @@
   @media (min-width:640px){
     header h1{font-size:26px}
     .hymn-num{font-size:32px}
-    .mass-tabs{justify-content:center}
-    .mass-tabs button{font-size:14px;padding:12px 18px}
+    .hymn-hero-num{font-size:64px}
+    .hymn-hero-say{font-size:20px}
+    .mass-tabs button,.mass-tabs .mass-tab-link{font-size:14px;padding:12px 18px}
   }

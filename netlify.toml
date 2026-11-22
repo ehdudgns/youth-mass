@@ -36,3 +36,8 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+[[headers]]
+  for = "/readings/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+

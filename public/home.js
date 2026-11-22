@@ -44,6 +44,13 @@ export function mount(root) {
       </div>
     </div>
 
+    <a class="card" href="/readings/">
+      <span class="arrow">→</span>
+      <div class="emoji">📖</div>
+      <h2>오늘 독서</h2>
+      <p class="desc">제1독서·화답송·제2독서·복음 본문</p>
+    </a>
+
     <a class="card" href="/rosary/">
       <span class="arrow">→</span>
       <div class="emoji">📿</div>

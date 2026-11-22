@@ -364,6 +364,10 @@ export async function mount(root) {
             offertory: splitNums(fOff.value),
             communion: [...fCom.querySelectorAll("input")].flatMap((i) => splitNums(i.value)),
             recessional: splitNums(fRec.value),
+            // 2차 헌금은 /mass/ 에서만 설정 — 성가 저장 시 기존 값 유지
+            secondCollection: id
+                ? state.masses.find((m) => m.id === id)?.secondCollection ?? null
+                : null,
         };
         if (!body.date) {
             formErr.textContent = "날짜를 골라 주세요.";
