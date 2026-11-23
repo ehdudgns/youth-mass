@@ -120,8 +120,8 @@ const P: Record<PrayerKey, Prayer> = {
   closing: {
     name: "마침 기도",
     text:
-      "○ 천주의 성모님, 저희를 위하여 빌어 주시어\n● 그리스도께서 약속하신 영원한 생명을 얻게 하소서.\n✝ 기도합시다.\n하느님,\n외아드님께서 삶과 죽음과 부활로\n저희에게 영원한 구원을 마련해 주셨나이다.\n복되신 동정 마리아와 함께\n이 신비를 묵상하며 묵주 기도를 바치오니\n저희가 그 가르침을 따라\n영원한 생명을 얻게 하소서.\n우리 주 그리스도를 통하여 비나이다.\n◎ 아멘.",
-    note: "○ 인도자(또는 한쪽) ● 모두(또는 다른 쪽). ✝ 인도자. 혼자 바칠 때는 모두 이어서 바칩니다.",
+      "○ 천주의 성모님, 저희를 위하여 빌어 주시어\n● 그리스도께서 약속하신 영원한 생명을 얻게 하소서.\n✝ 기도합시다.\n하느님,\n외아드님께서 삶과 죽음과 부활로\n저희에게 영원한 구원을 마련해 주셨나이다.\n복되신 동정 마리아와 함께\n이 신비를 묵상하며 묵주 기도를 바치오니\n저희가 그 가르침을 따라\n영원한 생명을 얻게 하소서.\n우리 주 그리스도를 통하여 비나이다.\n◎ 아멘.\n○ 성부와 성자와 성령의 이름으로.\n◎ 아멘.",
+    note: "○ 인도자(또는 한쪽) ● 모두(또는 다른 쪽). ✝ 인도자. 혼자 바칠 때는 모두 이어서 바칩니다. 마지막에 성호경으로 마칩니다.",
   },
   signEnd: {
     name: "성호경",
@@ -232,6 +232,10 @@ const ROLE_SPLITS: Record<string, RolePair | RolePair[]> = {
         "기도합시다.\n하느님,\n외아드님께서 삶과 죽음과 부활로\n저희에게 영원한 구원을 마련해 주셨나이다.\n복되신 동정 마리아와 함께\n이 신비를 묵상하며 묵주 기도를 바치오니\n저희가 그 가르침을 따라\n영원한 생명을 얻게 하소서.\n우리 주 그리스도를 통하여 비나이다.",
       faithful: "아멘.",
     },
+    {
+      commentator: "성부와 성자와 성령의 이름으로.",
+      faithful: "아멘.",
+    },
   ],
 };
 
@@ -309,13 +313,13 @@ function buildMassSteps(decades: number): Step[] {
   }
   addStep(list, "salve", "M", { phase: "end" });
   addStep(list, "closing", "M", { phase: "end" });
+  addStep(list, "signEnd", "cross", { phase: "end" });
   if (n < 5) addStep(list, "remainRemark", "M", { phase: "end" });
   addStep(list, "closeGuide", "M", {
     phase: "end",
     pending: true,
     pendingLabel: PENDING.close,
   });
-  addStep(list, "signEnd", "cross", { phase: "end" });
   return list;
 }
 

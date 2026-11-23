@@ -9,7 +9,10 @@
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",sans-serif;
     line-height:1.55; min-height:100dvh}
-  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}
+  .wrap{
+    width:100%;max-width:min(960px,100%);margin:0 auto;
+    padding:12px max(12px,env(safe-area-inset-left)) 48px max(12px,env(safe-area-inset-right));
+  }
   header{text-align:center;padding:10px 0 6px}
   header .cross{color:var(--gold);font-size:22px;letter-spacing:4px}
   header h1{margin:6px 0 4px;font-size:24px;color:var(--navy);font-weight:800;letter-spacing:-.5px}
@@ -59,18 +62,18 @@
     letter-spacing:-.5px;line-height:1.15}
   .hymn-num.empty{color:#c8bfae;font-size:22px;font-weight:700}
 
-  /* 큰 성가 번호 (입당성가 ○번입니다) */
+  /* 큰 성가 번호 (입당성가 ○번입니다) — 화면 폭에 맞게 가변 */
   .hymn-hero{
-    margin:10px 0 4px;padding:16px 16px 18px;text-align:center;
+    margin:10px 0 4px;padding:clamp(12px,3vw,20px);text-align:center;
     background:var(--commentator-soft);border:2px solid var(--commentator);border-radius:18px
   }
   .hymn-hero-num{
-    font-size:56px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;
+    font-size:clamp(40px,12vw,72px);font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums;
     letter-spacing:-1px;line-height:1.05;margin:4px 0 8px
   }
-  .hymn-hero.empty .hymn-hero-num{color:#a8b89e;font-size:42px}
+  .hymn-hero.empty .hymn-hero-num{color:#a8b89e;font-size:clamp(32px,9vw,48px)}
   .hymn-hero-say{
-    font-size:18px;font-weight:800;color:var(--commentator);line-height:1.4
+    font-size:clamp(16px,3.6vw,22px);font-weight:800;color:var(--commentator);line-height:1.4
   }
 
   .sec-nav{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
@@ -116,19 +119,27 @@
     padding:2px 8px;border-radius:999px;border:1px solid var(--ink);color:var(--ink);
     background:#fff;margin-bottom:6px}
   .role-block[data-role="faithful"] .role-label{border-style:dashed}
-  .role-text{font-size:15px;white-space:pre-line;line-height:1.65;color:var(--navy)}
+  .role-text{
+    font-size:clamp(15px,2.6vw + .3rem,18px);white-space:pre-line;line-height:1.65;color:var(--navy);
+    overflow-wrap:anywhere;word-break:keep-all
+  }
 
-  /* 해설자 블록 */
+  /* 해설자 안내 블록 — 화면 비율에 맞게 가변 */
   .commentator-block{
-    margin:0;padding:12px 14px;border:2px solid var(--commentator);border-radius:14px;
+    margin:0;width:100%;box-sizing:border-box;
+    padding:clamp(12px,2.8vw,20px) clamp(14px,3.2vw,22px);
+    border:2px solid var(--commentator);border-radius:clamp(12px,2vw,16px);
     background:var(--commentator-soft)
   }
   .commentator-label{
-    display:inline-block;font-weight:800;font-size:11px;letter-spacing:.04em;
+    display:inline-block;font-weight:800;font-size:clamp(11px,2.2vw,13px);letter-spacing:.04em;
     padding:2px 8px;border-radius:999px;border:2px solid var(--commentator);
-    color:#fff;background:var(--commentator);margin-bottom:6px
+    color:#fff;background:var(--commentator);margin-bottom:8px
   }
-  .commentator-text{font-size:15px;line-height:1.65;color:var(--ink)}
+  .commentator-text{
+    font-size:clamp(15px,2.8vw + .35rem,19px);line-height:1.65;color:var(--ink);
+    overflow-wrap:anywhere;word-break:keep-all
+  }
 
   /* 자세 안내 */
   .posture-cue{
@@ -139,9 +150,10 @@
 
   /* 성가 안내 (해설자용) */
   .hymn-announce-line{
-    font-size:16px;font-weight:700;color:var(--commentator);
+    font-size:clamp(15px,3.2vw,18px);font-weight:700;color:var(--commentator);
     background:var(--commentator-soft);border:1px solid var(--commentator);
-    border-radius:12px;padding:10px 14px;margin:4px 0
+    border-radius:12px;padding:clamp(10px,2.4vw,14px) clamp(12px,3vw,16px);margin:4px 0;
+    overflow-wrap:anywhere
   }
   .hymn-announce-line.empty{color:#8a9f7e;border-style:dashed}
 
@@ -221,7 +233,11 @@
   @media (min-width:640px){
     header h1{font-size:26px}
     .hymn-num{font-size:32px}
-    .hymn-hero-num{font-size:64px}
-    .hymn-hero-say{font-size:20px}
     .mass-tabs button,.mass-tabs .mass-tab-link{font-size:14px;padding:12px 18px}
+    .wrap{padding-left:24px;padding-right:24px}
+  }
+  @media (min-width:1100px){
+    .wrap{max-width:1040px;padding-left:28px;padding-right:28px}
+    .sec-body{padding:18px 20px}
+    .commentator-block{max-width:100%}
   }
